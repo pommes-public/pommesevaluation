@@ -1,11 +1,14 @@
 ﻿# Ignore (files stored at) a given path
-/data
-/model_inputs
-/model_results
-/plots
+/data/*
+/model_inputs/*
+/model_results/*
+/plots/*
 /build
 /dist
 *.egg-info
+
+# Keep certain files
+!.gitkeep
 
 # Ignore files with a special ending (or content)
 *__pycache__*
