@@ -1,5 +1,6 @@
 ﻿# Ignore (files stored at) a given path
 /data
+/model_inputs
 /model_results
 /plots
 /build
