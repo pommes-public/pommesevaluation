@@ -109,6 +109,7 @@ def draw_price_plot(
     color,
     title,
     y_min_max=False,
+    ylim=None,
     show=False,
     save=True,
     path_plots="./plots/",
@@ -128,7 +129,10 @@ def draw_price_plot(
         Title of the plot
 
     y_min_max : boolean
-        If True, use -100 and +200 as price limits
+        If True, use -100 and +200 as price limits if not specified otherwise
+
+    ylim : list
+        y axis limits (lower, upper)
 
     show : boolean
         If True, show the plot
@@ -149,7 +153,10 @@ def draw_price_plot(
     _ = plt.tight_layout()
 
     if y_min_max:
-        _ = plt.axis(ymin=-100, ymax=200)
+        if ylim is not None:
+            _ = plt.axis(ymin=ylim[0], ymax=ylim[1])
+        else:
+            _ = plt.axis(ymin=-100, ymax=200)
 
     if save:
         plt.savefig(f"{path_plots}{file_name}.png", dpi=300)
@@ -181,6 +188,8 @@ def draw_price_duration_plot(
     historical_prices,
     show=True,
     save=False,
+    y_min_max=True,
+    ylim=None,
     file_name="power_price_duration_curve",
 ):
     """Plot price duration curves in comparison"""
@@ -198,6 +207,7 @@ def draw_price_duration_plot(
         color=["b", "r"],
         title="Power price duration curve comparison",
         y_min_max=True,
+        ylim=ylim,
         show=show,
         save=save,
     )
