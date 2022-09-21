@@ -128,7 +128,11 @@ def aggregate_investment_decision_results(
 
 
 def plot_single_investment_variable(
-        results, variable_name, colors=None, aggregation="energy_carrier"
+        results,
+        variable_name,
+        colors=None,
+        aggregation="energy_carrier",
+        storage=False,
 ):
     """Plot a single investment-related variable from results data set
 
@@ -147,6 +151,10 @@ def plot_single_investment_variable(
     aggregation : str or None
         Determines which kind of aggregation has been made;
         aggregation by `energy_carrier` or by `technology`
+
+    storage : bool
+        If True, modify plot such that storage investments can be depicted;
+        introduces secondary y axis for storage energy content
     """
     ylabels = {
         "invest": "newly invested capacity",
@@ -161,14 +169,57 @@ def plot_single_investment_variable(
         index=aggregation, columns="year", values=variable_name
     )
     fig, ax = plt.subplots(figsize=(12, 5))
-    if colors:
-        plot_data = plot_data.loc[[col for col in colors]]
-        _ = plot_data.T.plot(kind="bar", stacked=True, ax=ax, color=colors)
-    else:
-        _ = plot_data.T.plot(kind="bar", stacked=True, ax=ax)
-    _ = plt.legend(bbox_to_anchor=[1.02, 1.02])
-    _ = plt.xlabel("year")
-    _ = plt.ylabel(f"{ylabels[variable_name]} in MW")
-    _ = plt.tight_layout()
+    if not storage:
+        if colors:
+            plot_data = plot_data.loc[[col for col in colors]]
+            _ = plot_data.T.plot(kind="bar", stacked=True, ax=ax, color=colors)
+        else:
+            _ = plot_data.T.plot(kind="bar", stacked=True, ax=ax)
 
+    else:
+        ax2 = ax.twinx()
+        energy_results = plot_data.loc[
+            plot_data.index.get_level_values(0).isin(
+                ["PHS_capacity", "battery_capacity"]
+            )
+        ]
+        power_results = plot_data.drop(index=energy_results.index)
+
+        if colors:
+            energy_results = energy_results.loc[
+                [col for col in colors if col in energy_results.index]
+            ]
+            energy_colors = {
+                col: val
+                for col, val in colors.items()
+                if col in energy_results.index
+            }
+            _ = energy_results.T.plot(
+                kind="bar", stacked=True, ax=ax2, alpha=0.3,
+                color=energy_colors,
+                legend=False
+            )
+
+            power_results = power_results.loc[
+                [col for col in colors if col in power_results.index]
+            ]
+            power_colors = {
+                col: val
+                for col, val in colors.items()
+                if col in power_results.index
+            }
+            _ = power_results.T.plot(
+                kind="bar", stacked=True, ax=ax, color=power_colors,
+                legend=False
+            )
+        else:
+            _ = energy_results.T.plot(kind="bar", stacked=True, ax=ax)
+            _ = power_results.T.plot(kind="bar", stacked=True, ax=ax)
+
+        _ = ax2.set_ylabel(f"{ylabels[variable_name]} in MWh")
+
+    _ = plt.legend(bbox_to_anchor=[1.1, 1.02])
+    _ = plt.xlabel("year")
+    _ = ax.set_ylabel(f"{ylabels[variable_name]} in MW")
+    _ = plt.tight_layout()
     _ = plt.show()
