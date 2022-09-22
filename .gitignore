@@ -3,6 +3,7 @@
 /model_inputs/*
 /model_results/*
 /plots/*
+/data_out/*
 /build
 /dist
 *.egg-info
