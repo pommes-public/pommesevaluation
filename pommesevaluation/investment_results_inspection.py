@@ -128,11 +128,12 @@ def aggregate_investment_decision_results(
 
 
 def plot_single_investment_variable(
-        results,
-        variable_name,
-        colors=None,
-        aggregation="energy_carrier",
-        storage=False,
+    results,
+    variable_name,
+    colors=None,
+    aggregation="energy_carrier",
+    storage=False,
+    group=True,
 ):
     """Plot a single investment-related variable from results data set
 
@@ -155,6 +156,10 @@ def plot_single_investment_variable(
     storage : bool
         If True, modify plot such that storage investments can be depicted;
         introduces secondary y axis for storage energy content
+
+    group : bool
+        If True, group data by given aggregation type (default);
+        else plot data as it has been given
     """
     ylabels = {
         "invest": "newly invested capacity",
@@ -162,12 +167,16 @@ def plot_single_investment_variable(
         "old_end": "capacity decommissioned because of lifetime",
         "old_exo": "capacity decommissioned because after initial age",
         "total": "total installed capacity",
+        "all": "overall installed capacity",
     }
 
-    plot_data = results[[variable_name]].reset_index()
-    plot_data = plot_data.pivot(
-        index=aggregation, columns="year", values=variable_name
-    )
+    if group:
+        plot_data = results[[variable_name]].reset_index()
+        plot_data = plot_data.pivot(
+            index=aggregation, columns="year", values=variable_name
+        )
+    else:
+        plot_data = results.copy()
     fig, ax = plt.subplots(figsize=(12, 5))
     if not storage:
         if colors:
@@ -195,9 +204,12 @@ def plot_single_investment_variable(
                 if col in energy_results.index
             }
             _ = energy_results.T.plot(
-                kind="bar", stacked=True, ax=ax2, alpha=0.3,
+                kind="bar",
+                stacked=True,
+                ax=ax2,
+                alpha=0.3,
                 color=energy_colors,
-                legend=False
+                legend=False,
             )
 
             power_results = power_results.loc[
@@ -209,8 +221,11 @@ def plot_single_investment_variable(
                 if col in power_results.index
             }
             _ = power_results.T.plot(
-                kind="bar", stacked=True, ax=ax, color=power_colors,
-                legend=False
+                kind="bar",
+                stacked=True,
+                ax=ax,
+                color=power_colors,
+                legend=False,
             )
         else:
             _ = energy_results.T.plot(kind="bar", stacked=True, ax=ax)
@@ -220,6 +235,10 @@ def plot_single_investment_variable(
 
     _ = plt.legend(bbox_to_anchor=[1.1, 1.02])
     _ = plt.xlabel("year")
+    current_values = plt.gca().get_yticks()
+    _ = plt.gca().set_yticklabels(
+        ["{:,.0f}".format(x) for x in current_values]
+    )
     _ = ax.set_ylabel(f"{ylabels[variable_name]} in MW")
     _ = plt.tight_layout()
     _ = plt.show()
