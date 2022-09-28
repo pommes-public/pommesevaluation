@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+from matplotlib.ticker import FuncFormatter
 
 
 def preprocess_raw_results(results_raw):
@@ -94,7 +95,6 @@ def aggregate_investment_decision_results(
     storage_elements = ["_capacity", "_outflow"]
     storages = [a + b for a in storage_technologies for b in storage_elements]
 
-    energy_carriers = energy_carriers
     technologies = r"GT|ST|CC|FC"
 
     grouping_col = by
@@ -134,6 +134,11 @@ def plot_single_investment_variable(
     aggregation="energy_carrier",
     storage=False,
     group=True,
+    save=False,
+    filename="results",
+    dr_scenario="none",
+    path_plots="./plots/",
+    path_data_out="./data_out/",
 ):
     """Plot a single investment-related variable from results data set
 
@@ -144,7 +149,7 @@ def plot_single_investment_variable(
 
     variable_name : str
         Particular variable to plot;
-        one of ['invest', 'old', 'old_end', 'old_exo', 'total']
+        one of ['invest', 'old', 'old_end', 'old_exo', 'total', 'all']
 
     colors : dict or None
         Colors to use if given
@@ -160,6 +165,21 @@ def plot_single_investment_variable(
     group : bool
         If True, group data by given aggregation type (default);
         else plot data as it has been given
+
+    save : bool
+        If True, save to file (defaults to False)
+
+    filename : str
+        File name to use for saving to file
+
+    dr_scenario : str
+        Scenario for demand response that has been considered
+
+    path_plots : str
+        Path for storing the generated plot
+
+    path_data_out : str
+        Path for storing the aggregated results data
     """
     ylabels = {
         "invest": "newly invested capacity",
@@ -169,21 +189,83 @@ def plot_single_investment_variable(
         "total": "total installed capacity",
         "all": "overall installed capacity",
     }
-
     if group:
-        plot_data = results[[variable_name]].reset_index()
-        plot_data = plot_data.pivot(
-            index=aggregation, columns="year", values=variable_name
-        )
+        plot_data = group_results(results, variable_name, aggregation)
     else:
         plot_data = results.copy()
+
     fig, ax = plt.subplots(figsize=(12, 5))
+    create_single_plot(plot_data, variable_name, colors, storage, ax, ylabels)
+
+    _ = plt.tight_layout()
+
+    if save:
+        _ = plt.savefig(f"{path_plots}{filename}_{dr_scenario}.png", dpi=300)
+        plot_data.to_csv(f"{path_data_out}{filename}_{dr_scenario}.csv")
+
+    _ = plt.show()
+    plt.close()
+
+
+def group_results(
+    results,
+    variable_name,
+    aggregation="energy_carrier",
+):
+    """Group investment decision results by given aggregation column
+
+    Parameters
+    ----------
+    results : pd.DataFrame
+        Data set containing all investment results
+
+    variable_name : str
+        Particular variable to plot;
+        one of ['invest', 'old', 'old_end', 'old_exo', 'total']
+
+    aggregation : str or None
+        Determines which kind of aggregation has been made;
+        aggregation by `energy_carrier` or by `technology`
+    """
+    plot_data = results[[variable_name]].reset_index()
+    plot_data = plot_data.pivot(
+        index=aggregation, columns="year", values=variable_name
+    )
+
+    return plot_data
+
+
+def create_single_plot(
+    plot_data,
+    variable_name,
+    colors,
+    storage,
+    ax,
+    ylabels,
+    title=None,
+    legend=True,
+    hide_axis=False,
+    ylim=None,
+):
+    """Create one single investment results plot"""
     if not storage:
         if colors:
             plot_data = plot_data.loc[[col for col in colors]]
-            _ = plot_data.T.plot(kind="bar", stacked=True, ax=ax, color=colors)
+            if legend:
+                _ = plot_data.T.plot(
+                    kind="bar", stacked=True, ax=ax, color=colors
+                )
+            else:
+                _ = plot_data.T.plot(
+                    kind="bar", stacked=True, ax=ax, color=colors, legend=False
+                )
         else:
-            _ = plot_data.T.plot(kind="bar", stacked=True, ax=ax)
+            if legend:
+                _ = plot_data.T.plot(kind="bar", stacked=True, ax=ax)
+            else:
+                _ = plot_data.T.plot(
+                    kind="bar", stacked=True, ax=ax, legend=False
+                )
 
     else:
         ax2 = ax.twinx()
@@ -231,14 +313,132 @@ def plot_single_investment_variable(
             _ = energy_results.T.plot(kind="bar", stacked=True, ax=ax)
             _ = power_results.T.plot(kind="bar", stacked=True, ax=ax)
 
-        _ = ax2.set_ylabel(f"{ylabels[variable_name]} in MWh")
+        if not hide_axis:
+            _ = ax2.set_ylabel(f"{ylabels[variable_name]} in MWh")
 
-    _ = plt.legend(bbox_to_anchor=[1.1, 1.02])
-    _ = plt.xlabel("year")
-    current_values = plt.gca().get_yticks()
-    _ = plt.gca().set_yticklabels(
-        ["{:,.0f}".format(x) for x in current_values]
+    if title:
+        _ = ax.set_title(title)
+    if legend:
+        _ = plt.legend(bbox_to_anchor=[1.1, 1.02])
+
+    if hide_axis:
+        _ = ax.get_xaxis().set_visible(False)
+    else:
+        _ = plt.xlabel("year")
+        _ = ax.set_ylabel(f"{ylabels[variable_name]} in MW")
+
+    if ylim:
+        _ = ax.set_ylim(ylim)
+    # current_values = plt.gca().get_yticks()
+    # _ = plt.gca().set_yticklabels(
+    #     ["{:,.0f}".format(x) for x in current_values]
+    # )
+    _ = ax.get_yaxis().set_major_formatter(
+        FuncFormatter(lambda x, p: format(int(x), ","))
     )
-    _ = ax.set_ylabel(f"{ylabels[variable_name]} in MW")
+
+
+def plot_single_investment_variable_for_all_cases(
+    results_dict,
+    variable_name,
+    colors=None,
+    aggregation="energy_carrier",
+    storage=False,
+    group=True,
+    dr_color_codes={},
+    save=False,
+    filename="results",
+    path_plots="./plots/",
+    ylim=None,
+):
+    """Plot investment variable; create subplots to compare among scenarios
+
+    Parameters
+    ----------
+    results_dict : dict of pd.DataFrame
+        Dict containing all investment results data sets
+
+    variable_name : str
+        Particular variable to plot;
+        one of ['invest', 'old', 'old_end', 'old_exo', 'total', 'all']
+
+    colors : dict or None
+        Colors to use if given
+
+    aggregation : str or None
+        Determines which kind of aggregation has been made;
+        aggregation by `energy_carrier` or by `technology`
+
+    storage : bool
+        If True, modify plot such that storage investments can be depicted;
+        introduces secondary y axis for storage energy content
+
+    group : bool
+        If True, group data by given aggregation type (default);
+        else plot data as it has been given
+
+    dr_color_codes : dict
+        Dict of demand response color codes
+
+    save : bool
+        If True, save to file (defaults to False)
+
+    filename : str
+        File name to use for saving to file
+
+    path_plots : str
+        Path for storing the generated plot
+
+    ylim : list
+        Common yaxis limit to share among the plots
+    """
+    ylabels = {
+        "invest": "newly invested capacity",
+        "old": "total decommissioned capacity",
+        "old_end": "capacity decommissioned because of lifetime",
+        "old_exo": "capacity decommissioned because after initial age",
+        "total": "total installed capacity",
+        "all": "overall installed capacity",
+    }
+
+    fig, axs = plt.subplots(
+        len(results_dict), 1, figsize=(12, 3 * len(results_dict))
+    )
+    hide_axis = True
+    for number, item in enumerate(results_dict.items()):
+        if number == len(results_dict) - 1:
+            hide_axis = False
+
+        dr_scenario = item[0]
+        results = item[1]
+
+        colors_copy = colors.copy()
+        if dr_scenario is "none":
+            for color in dr_color_codes:
+                colors_copy.pop(color)
+
+        if group:
+            plot_data = group_results(results, variable_name, aggregation)
+        else:
+            plot_data = results.copy()
+
+        create_single_plot(
+            plot_data,
+            variable_name,
+            colors_copy,
+            storage,
+            axs[number],
+            ylabels,
+            title=f"Demand Response scenario {dr_scenario}",
+            legend=False,
+            hide_axis=hide_axis,
+            ylim=ylim,
+        )
+
     _ = plt.tight_layout()
+
+    if save:
+        _ = plt.savefig(f"{path_plots}{filename}_all_scenarios.png", dpi=300)
+
     _ = plt.show()
+    plt.close()
