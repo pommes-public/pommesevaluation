@@ -1,16 +1,25 @@
+"""
+Routines used for investment results inspection for both, analyses of
+investments taken as well as the resulting dispatch of units resp. clusters.
+"""
+
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.ticker import FuncFormatter
 
 
-def preprocess_raw_results(results_raw):
-    """Preprocess raw investment results
+def preprocess_raw_results(results_raw, investments=True):
+    """Preprocess raw investment results - both, investments and dispatch
 
     Parameters
     ----------
     results_raw : pd.DataFrame
         Raw investment results
+
+    investments : bool
+        If True, analyse volumes invested into (MW);
+        if False, analyse resulting production (MWh)
 
     Returns
     -------
@@ -50,10 +59,30 @@ def preprocess_raw_results(results_raw):
         processed_results["to"] + "_outflow"
     )
 
+    # Adjust sink labels
+    processed_results.loc[
+        (processed_results["from"].str.contains("DE_bus_el"))
+        & (processed_results["to"].str.contains("DE_sink_el")),
+        "from",
+    ] = processed_results["to"]
+
+    # Adjust electrolyzer labels
+    processed_results.loc[
+        (processed_results["from"].str.contains("DE_bus_el"))
+        & (
+            processed_results["to"].str.contains(
+                "DE_transformer_hydrogen_electrolyzer"
+            )
+        ),
+        "from",
+    ] = processed_results["to"]
+
     processed_results = processed_results.rename(
         columns={"from": "unit"}
     ).drop(columns="to")
-    string_to_drop = ["DE_storage_el_", "DE_transformer_", "_new_built"]
+    string_to_drop = ["DE_storage_el_", "DE_transformer_"]
+    if investments:
+        string_to_drop.append("_new_built")
     for string in string_to_drop:
         processed_results["unit"] = processed_results["unit"].str.replace(
             string, ""
@@ -62,8 +91,8 @@ def preprocess_raw_results(results_raw):
     return processed_results
 
 
-def aggregate_investment_decision_results(
-    processed_results, energy_carriers, by="energy_carrier"
+def aggregate_investment_results(
+    processed_results, energy_carriers, by="energy_carrier", investments=True
 ):
     """Aggregate preprocesed investment results by energy carrier or technology
 
@@ -78,20 +107,42 @@ def aggregate_investment_decision_results(
     by : str
         Rule to group by; either `energy_carrier` or `technologies`
 
+    investments : bool
+        If True, analyse volumes invested into (MW);
+        if False, analyse resulting production (MWh)
+
     Returns
     -------
     aggregated_results : pd.DataFrame
-        Aggregated results incl. investments in storage inflow
+        Aggregated results incl. investments in storage inflow for investments
+        consideration; aggregated dispatch for dispatch consideration
 
     other_storages_results : pd.DataFrame
-        Results for investments in storage capacity and storage outflow
+        Results for investments in storage capacity and storage outflow;
+        only for investments consideration
     """
     aggregated_results = processed_results.copy()
     aggregated_results[["fuel", "tech"]] = aggregated_results[
         "unit"
     ].str.split("_", 1, expand=True)
 
+    # Account for naming convention of exogenous units (dispatch only)
+    aggregated_results.loc[
+        aggregated_results["fuel"] == "transformer", "fuel"
+    ] = aggregated_results["unit"].str.split("_", 2, expand=True)[1]
+
+    # Account for electrolyzers
+    aggregated_results.loc[
+        (aggregated_results["fuel"] == "hydrogen")
+        & (aggregated_results["tech"].str.contains("electrolyzer")), "fuel"
+    ] = aggregated_results["fuel"] + "_" + aggregated_results["tech"]
+
     storage_technologies = ["PHS", "battery"]
+    if not investments:
+        storage_technologies.extend(
+            [tech + "_new_built" for tech in storage_technologies]
+        )
+
     storage_elements = ["_capacity", "_outflow"]
     storages = [a + b for a in storage_technologies for b in storage_elements]
 
@@ -114,17 +165,27 @@ def aggregate_investment_decision_results(
     else:
         raise ValueError(
             f"Aggregation mode {by} not defined; "
-            f"must be `energy_carrier` or `technologies`."
+            f"must be either `energy_carrier` or `technologies`."
         )
 
-    aggregated_results = aggregated_results.groupby(
-        [grouping_col, "year"]
-    ).sum()
+    grouping_cols = [grouping_col]
+    if investments:
+        grouping_cols.append("year")
 
-    other_storages_results = aggregated_results.loc[[idx for idx in storages]]
-    aggregated_results.drop(index=other_storages_results.index, inplace=True)
+    aggregated_results = aggregated_results.groupby(grouping_cols).sum()
 
-    return aggregated_results, other_storages_results
+    if investments:
+        other_storages_results = aggregated_results.loc[
+            [idx for idx in storages]
+        ]
+        aggregated_results.drop(
+            index=other_storages_results.index, inplace=True
+        )
+
+        return aggregated_results, other_storages_results
+
+    else:
+        return aggregated_results
 
 
 def plot_single_investment_variable(
@@ -413,7 +474,7 @@ def plot_single_investment_variable_for_all_cases(
         results = item[1]
 
         colors_copy = colors.copy()
-        if dr_scenario is "none":
+        if dr_scenario == "none":
             for color in dr_color_codes:
                 colors_copy.pop(color)
 
