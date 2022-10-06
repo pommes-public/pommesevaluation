@@ -77,6 +77,21 @@ def preprocess_raw_results(results_raw, investments=True):
         "from",
     ] = processed_results["to"]
 
+    # Adjust demand response inflows (should be the remainder!)
+    processed_results.loc[
+        processed_results["from"].str.contains("DE_bus_el"), "from"
+    ] = (processed_results["to"] + "_demand_after")
+
+    # Separate demand response variables
+    processed_results.loc[
+        processed_results["to"].isin(
+            ["dsm_up", "dsm_do_shift", "dsm_do_shed", "dsm_storage_level"]
+        ),
+        "from",
+    ] = (
+        processed_results["from"] + "_" + processed_results["to"]
+    )
+
     processed_results = processed_results.rename(
         columns={"from": "unit"}
     ).drop(columns="to")
@@ -134,8 +149,11 @@ def aggregate_investment_results(
     # Account for electrolyzers
     aggregated_results.loc[
         (aggregated_results["fuel"] == "hydrogen")
-        & (aggregated_results["tech"].str.contains("electrolyzer")), "fuel"
-    ] = aggregated_results["fuel"] + "_" + aggregated_results["tech"]
+        & (aggregated_results["tech"].str.contains("electrolyzer")),
+        "fuel",
+    ] = (
+        aggregated_results["fuel"] + "_" + aggregated_results["tech"]
+    )
 
     storage_technologies = ["PHS", "battery"]
     if not investments:
@@ -500,6 +518,71 @@ def plot_single_investment_variable_for_all_cases(
 
     if save:
         _ = plt.savefig(f"{path_plots}{filename}_all_scenarios.png", dpi=300)
+
+    _ = plt.show()
+    plt.close()
+
+
+def plot_single_dispatch_pattern(
+    dispatch_pattern,
+    start_time_step,
+    amount_of_time_steps,
+    colors,
+    save=True,
+    path_plots="./plots/",
+    filename="dispatch_pattern",
+):
+    """Plot a single dispatch pattern for a given start and end time stamp
+
+    Parameters
+    ----------
+    dispatch_pattern : pd.DataFrame
+        Dispatch pattern to be plotted
+
+    start_time_step : str
+        First time step of excerpt displayed
+
+    amount_of_time_steps : int or float
+        Number of time steps to be displayed
+
+    colors : dict
+        Colors to use for the plot
+
+    save : bool
+        Indicates whether to save the plot
+
+    path_plots : str
+        Path to use for storing the plot
+
+    filename : str
+        File name to use for the plot
+    """
+    index_start = int(dispatch_pattern.index.get_loc(start_time_step))
+    index_end = int(index_start + amount_of_time_steps + 1)
+    end_time_step = dispatch_pattern.iloc[index_end].name
+
+    fig, ax = plt.subplots(figsize=(15, 10))
+    _ = dispatch_pattern.iloc[index_start:index_end].plot(
+        ax=ax, kind="area", color=colors
+    )
+    _ = ax.set_xlabel("Time")
+    _ = ax.set_ylabel("Energy [MWh/h]")
+    _ = plt.title(
+        f"Dispatch situation from {start_time_step} to {end_time_step}"
+    )
+    _ = plt.legend(bbox_to_anchor=[1.02, 1.05])
+    _ = plt.xticks(rotation=90)
+    _ = plt.tight_layout()
+
+    if save:
+        file_name_out = (
+            f"{path_plots}{filename}_{start_time_step}-{end_time_step}.png"
+        )
+        file_name_out = file_name_out.replace(":", "-").replace(" ", "_")
+        file_name_out.replace(":", "-")
+        _ = plt.savefig(
+            file_name_out, dpi=300,
+        )
 
     _ = plt.show()
     plt.close()
