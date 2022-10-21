@@ -27,7 +27,8 @@ def read_and_reshape_historical_prices(year, file_name):
     # Concat elements of recursive function call (2018 only)
     if isinstance(file_name, list):
         to_concat = [
-            read_and_reshape_historical_prices(year, file) for file in file_name
+            read_and_reshape_historical_prices(year, file)
+            for file in file_name
         ]
 
         power_prices = pd.concat(to_concat)
@@ -42,7 +43,9 @@ def read_and_reshape_historical_prices(year, file_name):
             parse_dates=True,
             infer_datetime_format=True,
         )
-        power_prices = power_prices.iloc[:, :25].loc[power_prices.index.year == year]
+        power_prices = power_prices.iloc[:, :25].loc[
+            power_prices.index.year == year
+        ]
 
         # Change columns
         hours = [1, 2, 3, 3.1, *list(range(4, 25))]
@@ -55,7 +58,9 @@ def read_and_reshape_historical_prices(year, file_name):
                 power_prices,
                 id_vars="Delivery day",
                 value_vars=[
-                    col for col in power_prices.columns if col != "Delivery day"
+                    col
+                    for col in power_prices.columns
+                    if col != "Delivery day"
                 ],
             )
             .sort_values(by=["Delivery day", "variable"])
@@ -86,19 +91,27 @@ def set_new_index(power_prices):
 
 def create_datestamps(x):
     """Create datestamp from delivery day and hour information"""
-    return pd.to_datetime(x["Delivery day"] + " " + f"{x['variable'] - 1}:00:00")
+    return pd.to_datetime(
+        x["Delivery day"] + " " + f"{x['variable'] - 1}:00:00"
+    )
 
 
-def compare_negative_price_distribution(model_prices, historical_prices, year):
-    """Draw a histogram to compare negative prices of model to historical ones"""
+def compare_or_show_negative_price_distribution(
+    model_prices, year, historical_prices=None
+):
+    """Draw a histogram comparing negative prices of model to historical"""
     fig, ax = plt.subplots()
     model_prices.loc[model_prices.model_price < 0].model_price.plot(
         kind="hist", bins=30, color="r", alpha=0.3, ax=ax
     )
-    historical_prices[year].loc[
-        historical_prices[year].historical_price < 0
-    ].historical_price.plot(kind="hist", bins=30, alpha=0.3, ax=ax)
-    plt.title("Comparison of negative price distribution")
+    if historical_prices or year <= 2022:
+        historical_prices[year].loc[
+            historical_prices[year].historical_price < 0
+        ].historical_price.plot(kind="hist", bins=30, alpha=0.3, ax=ax)
+        title = "Comparison of negative price distribution"
+    else:
+        title = "Negative price distribution"
+    plt.title(title)
     plt.xlabel("power price")
     plt.legend()
     plt.show()
@@ -150,13 +163,14 @@ def draw_price_plot(
     _ = ax.legend(bbox_to_anchor=[1.0, 0.85, 0.1, 0.1])
     _ = plt.xlabel("time")
     _ = plt.xticks(rotation=45)
-    _ = plt.tight_layout()
 
     if y_min_max:
         if ylim is not None:
             _ = plt.axis(ymin=ylim[0], ymax=ylim[1])
         else:
             _ = plt.axis(ymin=-100, ymax=200)
+
+    _ = plt.tight_layout()
 
     if save:
         plt.savefig(f"{path_plots}{file_name}.png", dpi=300)
@@ -166,17 +180,44 @@ def draw_price_plot(
     plt.close()
 
 
-def draw_weekly_plot(power_prices, simulation_year):
-    """Draw weekly price comparison plots"""
+def draw_weekly_plot(
+    power_prices,
+    simulation_year,
+    color=["b", "r"],
+    comparison=True,
+    ylim=[-100, 200],
+):
+    """Draw weekly price plots
+
+    Parameters
+    ----------
+    power_prices : pd.DataFrame
+        Power price time series; either only model outcomes or model outcomes + historical
+
+    simulation_year : int
+        Year simulated
+
+    color : list or str
+        Color(s) to be used
+
+    comparison : bool
+        If True, plot against historical prices, else show model outcome only
+    """
     for week in range(52):
+        if comparison:
+            title = (
+                f"Power price time series comparison for {simulation_year};"
+                + f"week: {week + 1}"
+            )
+        else:
+            title = f"Power price pattern for {simulation_year} in week: {week + 1}"
+
         draw_price_plot(
             power_prices=power_prices.iloc[week * 168 : (week + 1) * 168 + 1],
-            color=["b", "r"],
-            title=(
-                f"Power price time series comparison for {simulation_year};"
-                + f"week: {week + 1}",
-            ),
+            color=color,
+            title=title,
             y_min_max=True,
+            ylim=ylim,
             show=False,
             save=True,
             file_name=f"power_prices_{simulation_year}_week_{week + 1}",
@@ -201,15 +242,18 @@ def draw_price_duration_plot(
         by="historical_price", ascending=False
     ).reset_index(drop=True)
 
-    sorted_prices = pd.concat([historical_prices_sorted, model_prices_sorted], axis=1)
+    sorted_prices = pd.concat(
+        [historical_prices_sorted, model_prices_sorted], axis=1
+    )
     draw_price_plot(
         power_prices=sorted_prices,
         color=["b", "r"],
         title="Power price duration curve comparison",
-        y_min_max=True,
+        y_min_max=y_min_max,
         ylim=ylim,
         show=show,
         save=save,
+        file_name=file_name,
     )
 
 
