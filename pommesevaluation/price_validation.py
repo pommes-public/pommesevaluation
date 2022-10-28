@@ -97,7 +97,12 @@ def create_datestamps(x):
 
 
 def compare_or_show_negative_price_distribution(
-    model_prices, year, historical_prices=None
+    model_prices,
+    year,
+    historical_prices=None,
+    save=True,
+    path_plots="./plots/",
+    file_name="negative_price_distribution",
 ):
     """Draw a histogram comparing negative prices of model to historical"""
     fig, ax = plt.subplots()
@@ -114,7 +119,14 @@ def compare_or_show_negative_price_distribution(
     plt.title(title)
     plt.xlabel("power price")
     plt.legend()
+
+    _ = plt.tight_layout()
+
+    if save:
+        plt.savefig(f"{path_plots}{file_name}.png", dpi=300)
+
     plt.show()
+    plt.close()
 
 
 def draw_price_plot(

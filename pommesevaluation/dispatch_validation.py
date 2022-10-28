@@ -67,7 +67,7 @@ def load_entsoe_german_generation_data(path="./data/production/", year=2017):
     return generation
 
 
-def plot_imports_and_exports(im_ex_data, country_colors_im_ex, start, end):
+def plot_imports_and_exports(im_ex_data, country_colors_im_ex, start, end, save=True, path_plots="./plots/", file_name="imports_and_exports"):
     """Plot an area plot of imports and exports
 
     Parameters
@@ -91,6 +91,10 @@ def plot_imports_and_exports(im_ex_data, country_colors_im_ex, start, end):
     _ = ax.set_ylabel("Energy in MWh")
     _ = plt.legend(bbox_to_anchor=[1.02, 1.05])
     _ = plt.tight_layout()
+
+    if save:
+        _ = plt.savefig(f"{path_plots}{file_name}.png", dpi=300)
+
     plt.show()
 
 
