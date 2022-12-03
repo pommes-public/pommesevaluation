@@ -1,3 +1,5 @@
+import datetime
+
 from matplotlib import pyplot as plt
 
 
@@ -47,20 +49,29 @@ def plot_combined_dispatch_and_price_plot(
     _ = ax.right_ax.set_ylabel("Power price [€/MWh]")
 
     _ = plt.title(
-        f"Dispatch and price situation between {start_time_step} and {end_time_step}"
+        f"Dispatch and price situation between "
+        f"{start_time_step} "
+        f"and {end_time_step}"
     )
 
     # Create the legend
     fig.legend(
-        loc="upper right",
-        bbox_to_anchor=[1, 0.88],
-        borderaxespad=0.1,
+        loc="lower left",
+        bbox_to_anchor=[0.12, -0.12, 0.78, 0.1],
+        ncol=5,
+        fancybox=True,
+        borderaxespad=0.0,
+        mode="expand",
     )
 
-    _ = plt.subplots_adjust(right=0.75)
-    # _ = plt.tight_layout(rect=[0, 0, 0.75, 1])
+    # _ = plt.tight_layout(rect=[0, -0.2, 1, 1])
     _ = plt.savefig(
-        f"{path_plots}excess_situation_{simulation_year}{file_name_suffix}.png", dpi=300
+        (
+            f"{path_plots}excess_situation_{simulation_year}"
+            f"{file_name_suffix}.png"
+        ),
+        dpi=300,
+        bbox_inches="tight",
     )
 
     plt.show()
