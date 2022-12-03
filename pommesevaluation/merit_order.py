@@ -92,6 +92,7 @@ def plot_merit_order(
     save=True,
     path_plots="./plots/",
     file_name="merit_order",
+    place_legend_below=False,
 ):
     """Plot a merit order based on given data
 
@@ -124,6 +125,9 @@ def plot_merit_order(
 
     file_name : str
         file name for the plot
+
+    place_legend_below: boolean
+        If True, place legend below outside the actual plot
     """
     fig, ax = plt.subplots(figsize=(12, height))
     for fuel in merit_order["fuel"].unique():
@@ -152,9 +156,21 @@ def plot_merit_order(
         )
     _ = ax.grid(axis="y")
     _ = plt.yticks(np.arange(ylim[0], ylim[1] + 1, interval))
+    current_values = plt.gca().get_xticks()
+    plt.gca().set_xticklabels(["{:,.0f}".format(x) for x in current_values])
     _ = plt.xlabel("Cumulated power [MW]")
     _ = plt.ylabel("marginal costs resp. opportunity costs [€/MWh]")
-    _ = ax.legend(loc="lower right", ncol=4)
+    if not place_legend_below:
+        _ = ax.legend(loc="lower right", ncol=4)
+    else:
+        _ = ax.legend(
+            loc="lower left",
+            bbox_to_anchor=[0, -0.15, 1, 1],
+            ncol=4,
+            fancybox=True,
+            borderaxespad=0.0,
+            mode="expand",
+        )
 
     plt.tight_layout()
 
