@@ -280,7 +280,7 @@ def plot_single_investment_variable(
 
     if save:
         _ = plt.savefig(f"{path_plots}{filename}_{dr_scenario}.png", dpi=300)
-        plot_data.to_csv(f"{path_data_out}{filename}_{dr_scenario}.csv")
+        plot_data.T.to_csv(f"{path_data_out}{filename}_{dr_scenario}.csv")
 
     _ = plt.show()
     plt.close()
