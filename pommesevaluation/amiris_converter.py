@@ -4,7 +4,7 @@ import os
 
 def convert_annual_data_to_fame_time(
     df: pd.DataFrame,
-    orient: str = "columns",
+    orient: str = "rows",
     save: bool = False,
     path: str = "./data_out/amiris/",
     filename: str = "time_series",
