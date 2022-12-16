@@ -54,13 +54,13 @@ def convert_annual_data_to_fame_time(
 
 
 def save_given_data_set_for_fame(
-    data_set: pd.DataFrame, path: str, filename: str
+    data_set: pd.DataFrame or pd.Series, path: str, filename: str
 ):
     """Save a given data set using FAME time and formatting
 
     Parameters
     ----------
-    data_set: pd.DataFrame
+    data_set: pd.DataFrame or pd.Series
         Data set to be saved (column-wise)
 
     path: str
@@ -70,10 +70,15 @@ def save_given_data_set_for_fame(
         File name for storing
     """
     make_directory_if_missing(path)
-    for col in data_set.columns:
-        data_set[col].to_csv(
-            f"{path}{filename}_{col}.csv", header=None, sep=";"
-        )
+    if isinstance(data_set, pd.DataFrame):
+        for col in data_set.columns:
+            data_set[col].to_csv(
+                f"{path}{filename}_{col}.csv", header=False, sep=";"
+            )
+    elif isinstance(data_set, pd.Series):
+        data_set.to_csv(f"{path}{filename}.csv", header=False, sep=";")
+    else:
+        raise ValueError("Data set must be of type pd.DataFrame or pd.Series.")
 
 
 def make_directory_if_missing(folder: str) -> None:
@@ -128,3 +133,66 @@ def convert_time_series_index_to_fame_time(
         save_given_data_set_for_fame(time_series_reindexed, path, filename)
 
     return time_series_reindexed
+
+
+def extract_net_operation(
+    df: pd.DataFrame,
+    column_str: str,
+    outflow_column_str: str,
+    inflow_column_str: str,
+) -> pd.Series:
+    """Extracts net storage resp. import and exports operation
+
+    Parameters
+    ----------
+    df: pd.DataFrame
+        Data for which to extract net operation
+
+    column_str: str
+        String to filter for
+
+    outflow_column_str: str
+        String for all outflows
+
+    inflow_column_str: str
+        String for all inflows
+
+    Returns
+    -------
+    pd.Series
+    """
+    filtered_df = df[[col for col in df.columns if column_str in col]].copy()
+    outflows = [col for col in filtered_df if outflow_column_str in col]
+    inflows = [col for col in filtered_df if inflow_column_str in col]
+    filtered_df["outflows"] = filtered_df[outflows].sum(axis=1)
+    filtered_df["inflows"] = -filtered_df[inflows].sum(axis=1)
+    filtered_df["net_flows"] = filtered_df["outflows"] + filtered_df["inflows"]
+
+    return filtered_df["net_flows"]
+
+
+def resample_to_hourly_frequency(
+    data: pd.Series or pd.DataFrame, multiplier: int
+) -> pd.Series or pd.DataFrame:
+    """Resamples a given time series to hourly frequency
+
+    Parameters
+    ----------
+    data: pd.Series or pd.DataFrame
+        Data to be resampled
+
+    multiplier: int
+        Multiplier for frequency conversion
+
+    Returns
+    -------
+    resampled_data: pd.Series or pd.DataFrame
+        Data in hourly resolution
+    """
+    resampled_data = data.copy()
+    resampled_data.loc["2051-01-01 00:00:00"] = resampled_data.iloc[-1]
+    resampled_data.index = pd.to_datetime(pd.Series(resampled_data.index))
+    resampled_data = resampled_data.div(multiplier)
+    resampled_data = resampled_data.resample("H").interpolate("ffill")[:-1]
+
+    return resampled_data
