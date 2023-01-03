@@ -139,6 +139,7 @@ def draw_price_plot(
     save=True,
     path_plots="./plots/",
     file_name="power_prices",
+    figsize=(20, 10),
 ):
     """Plot power price results of model against historical prices
 
@@ -167,12 +168,15 @@ def draw_price_plot(
 
     file_name : str
         File name for saving the plot
+
+    figsize : tuple
+        Control the size of the figure created
     """
-    fig, ax = plt.subplots(figsize=(20, 10))
+    fig, ax = plt.subplots(figsize=figsize)
     ax = power_prices.plot(color=color, ax=ax)
     _ = plt.ylabel("power price in €/MWh")
     _ = plt.title(title)
-    _ = ax.legend(bbox_to_anchor=[1.0, 0.85, 0.1, 0.1])
+    _ = ax.legend(loc="upper right")
     _ = plt.xlabel("time")
     _ = plt.xticks(rotation=45)
 
@@ -244,6 +248,7 @@ def draw_price_duration_plot(
     y_min_max=True,
     ylim=None,
     file_name="power_price_duration_curve",
+    figsize=(20, 10),
 ):
     """Plot price duration curves in comparison"""
     model_prices_sorted = model_prices.sort_values(
@@ -266,6 +271,7 @@ def draw_price_duration_plot(
         show=show,
         save=save,
         file_name=file_name,
+        figsize=figsize,
     )
 
 
