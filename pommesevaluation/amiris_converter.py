@@ -8,6 +8,7 @@ def convert_annual_data_to_fame_time(
     save: bool = False,
     path: str = "./data_out/amiris/",
     filename: str = "time_series",
+    rounding_precision: int = 3,
 ) -> pd.DataFrame:
     """Converts a given annual DataFrame to FAME time format
 
@@ -29,6 +30,9 @@ def convert_annual_data_to_fame_time(
     filename: str
         File name of the data
 
+    rounding_precision: int
+        Decimal digits to use for rounding
+
     Returns
     -------
     reindexed_df: pd.DataFrame
@@ -46,6 +50,7 @@ def convert_annual_data_to_fame_time(
         f"{idx}-01-01_00:00:00" for idx in reindexed_df.index
     ]
     reindexed_df.set_index("fame_time_index", drop=True, inplace=True)
+    reindexed_df = reindexed_df.round(rounding_precision)
 
     if save:
         save_given_data_set_for_fame(reindexed_df, path, filename)
@@ -101,6 +106,7 @@ def convert_time_series_index_to_fame_time(
     save: bool = False,
     path: str = "./data_out/amiris/",
     filename: str = "time_series",
+    rounding_precision: int = 3,
 ) -> pd.DataFrame:
     """Convert index of given time series to FAME time format
 
@@ -118,6 +124,9 @@ def convert_time_series_index_to_fame_time(
     filename: str
         File name of the data
 
+    rounding_precision: int
+        Decimal digits to use for rounding
+
     Returns
     -------
     time_series_reindexed: pd.DataFrame
@@ -128,6 +137,7 @@ def convert_time_series_index_to_fame_time(
     time_series_reindexed.index = time_series_reindexed.index.str.replace(
         " ", "_"
     )
+    time_series_reindexed = time_series_reindexed.round(rounding_precision)
 
     if save:
         save_given_data_set_for_fame(time_series_reindexed, path, filename)
