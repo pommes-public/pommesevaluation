@@ -218,6 +218,7 @@ def plot_single_investment_variable(
     dr_scenario="none",
     path_plots="./plots/",
     path_data_out="./data_out/",
+    ylim=None,
 ):
     """Plot a single investment-related variable from results data set
 
@@ -259,6 +260,9 @@ def plot_single_investment_variable(
 
     path_data_out : str
         Path for storing the aggregated results data
+
+    ylim : list
+        y axis limits
     """
     ylabels = {
         "invest": "newly invested capacity",
@@ -274,7 +278,7 @@ def plot_single_investment_variable(
         plot_data = results.copy()
 
     fig, ax = plt.subplots(figsize=(12, 5))
-    create_single_plot(plot_data, variable_name, colors, storage, ax, ylabels)
+    create_single_plot(plot_data, variable_name, colors, storage, ax, ylabels, ylim=ylim)
 
     _ = plt.tight_layout()
 
