@@ -278,7 +278,9 @@ def plot_single_investment_variable(
         plot_data = results.copy()
 
     fig, ax = plt.subplots(figsize=(12, 5))
-    create_single_plot(plot_data, variable_name, colors, storage, ax, ylabels, ylim=ylim)
+    create_single_plot(
+        plot_data, variable_name, colors, storage, ax, ylabels, ylim=ylim
+    )
 
     _ = plt.tight_layout()
 
@@ -589,8 +591,34 @@ def plot_single_dispatch_pattern(
         file_name_out = file_name_out.replace(":", "-").replace(" ", "_")
         file_name_out.replace(":", "-")
         _ = plt.savefig(
-            file_name_out, dpi=300,
+            file_name_out,
+            dpi=300,
         )
 
+    _ = plt.show()
+    plt.close()
+
+
+def plot_time_series_cols(df, size=(15, 5)):
+    """Plot each column of a time series DataFrame in dedicated subplot
+
+    Parameters
+    ----------
+    df: pd.DataFrame
+        time series data to visualize
+
+    size: tuple of int
+        size of plot; first entry: width; second entry: height of single
+        subplot
+    """
+    fig, axs = plt.subplots(
+        len(df.columns), 1, figsize=(size[0], len(df.columns) * size[1])
+    )
+
+    for no, col in enumerate(df.columns):
+        _ = df[col].plot(ax=axs[no])
+        _ = axs[no].set_title(col)
+
+    _ = plt.tight_layout()
     _ = plt.show()
     plt.close()
