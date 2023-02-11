@@ -535,6 +535,7 @@ def plot_single_dispatch_pattern(
     save=True,
     path_plots="./plots/",
     filename="dispatch_pattern",
+    kind="area",
 ):
     """Plot a single dispatch pattern for a given start and end time stamp
 
@@ -560,6 +561,9 @@ def plot_single_dispatch_pattern(
 
     filename : str
         File name to use for the plot
+
+    kind : str
+        Kind of plot to draw; defaults to "area"
     """
     index_start = int(dispatch_pattern.index.get_loc(start_time_step))
     index_end = int(index_start + amount_of_time_steps + 1)
@@ -567,7 +571,7 @@ def plot_single_dispatch_pattern(
 
     fig, ax = plt.subplots(figsize=(15, 10))
     _ = dispatch_pattern.iloc[index_start:index_end].plot(
-        ax=ax, kind="area", color=colors
+        ax=ax, kind=kind, color=colors
     )
     _ = ax.set_xlabel("Time")
     _ = ax.set_ylabel("Energy [MWh/h]")
