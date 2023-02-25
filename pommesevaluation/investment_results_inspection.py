@@ -119,8 +119,9 @@ def aggregate_investment_results(
     energy_carriers : list
         List of feasible energy carriers
 
-    by : str
-        Rule to group by; either `energy_carrier` or `technologies`
+    by : str or list of str
+        Rule to group by; either `energy_carrier` or `technology`
+        or `["energy_carrier", "technology"]` for both
 
     investments : bool
         If True, analyse volumes invested into (MW);
@@ -167,26 +168,31 @@ def aggregate_investment_results(
     technologies = r"GT|ST|CC|FC"
 
     grouping_col = by
-    if by == "energy_carrier":
-        aggregated_results["energy_carrier"] = np.where(
-            aggregated_results["fuel"].isin(energy_carriers),
-            aggregated_results["fuel"],
-            aggregated_results["unit"],
-        )
-
-    elif by == "technology":
-        aggregated_results["technology"] = np.where(
-            aggregated_results["tech"].str.contains(technologies),
-            aggregated_results["tech"].str.split("_", expand=True).iloc[:, 0],
-            aggregated_results["unit"],
-        )
-    else:
+    aggregated_results["energy_carrier"] = np.where(
+        aggregated_results["fuel"].isin(energy_carriers),
+        aggregated_results["fuel"],
+        aggregated_results["unit"],
+    )
+    aggregated_results["technology"] = np.where(
+        aggregated_results["tech"].str.contains(technologies),
+        aggregated_results["tech"].str.split("_", expand=True).iloc[:, 0],
+        aggregated_results["unit"],
+    )
+    if by not in [
+        "energy_carrier",
+        "technology",
+        ["energy_carrier", "technology"],
+    ]:
         raise ValueError(
             f"Aggregation mode {by} not defined; "
-            f"must be either `energy_carrier` or `technologies`."
+            f"must be either `energy_carrier` or `technology` "
+            f"or `['energy_carrier', 'technology']`."
         )
 
-    grouping_cols = [grouping_col]
+    if not isinstance(grouping_col, list):
+        grouping_cols = [grouping_col]
+    else:
+        grouping_cols = grouping_col
     if investments:
         grouping_cols.append("year")
 
@@ -581,7 +587,8 @@ def plot_single_dispatch_pattern(
         file_name_out = file_name_out.replace(":", "-").replace(" ", "_")
         file_name_out.replace(":", "-")
         _ = plt.savefig(
-            file_name_out, dpi=300,
+            file_name_out,
+            dpi=300,
         )
 
     _ = plt.show()
