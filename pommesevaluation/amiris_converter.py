@@ -76,10 +76,16 @@ def save_given_data_set_for_fame(
     """
     make_directory_if_missing(path)
     if isinstance(data_set, pd.DataFrame):
-        for col in data_set.columns:
-            data_set[col].to_csv(
-                f"{path}{filename}_{col}.csv", header=False, sep=";"
-            )
+        if not isinstance(data_set.columns, pd.MultiIndex):
+            for col in data_set.columns:
+                data_set[col].to_csv(
+                    f"{path}{filename}_{col}.csv", header=False, sep=";"
+                )
+        else:
+            for col in data_set.columns:
+                data_set[col].to_csv(
+                    f"{path}{filename}_{col[0]}_{col[1]}.csv", header=False, sep=";"
+                )
     elif isinstance(data_set, pd.Series):
         data_set.to_csv(f"{path}{filename}.csv", header=False, sep=";")
     else:
