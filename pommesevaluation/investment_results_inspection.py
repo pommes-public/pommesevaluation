@@ -2,6 +2,7 @@
 Routines used for investment results inspection for both, analyses of
 investments taken as well as the resulting dispatch of units resp. clusters.
 """
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -616,9 +617,24 @@ def plot_time_series_cols(df, size=(15, 5)):
     )
 
     for no, col in enumerate(df.columns):
-        _ = df[col].plot(ax=axs[no])
-        _ = axs[no].set_title(col)
+        try:
+            _ = df[col].plot(ax=axs[no])
+            _ = axs[no].set_title(col)
+        except TypeError:
+            warnings.warn(
+                f"No numeric data to plot for column: {col}", UserWarning
+            )
 
     _ = plt.tight_layout()
     _ = plt.show()
     plt.close()
+
+
+def create_datetime_index(df: pd.DataFrame) -> pd.DataFrame:
+    """Return DataFrame with datetime index"""
+    df.loc[2051] = df.iloc[-1]
+    df["new_index"] = df.index.astype(str) + "-01-01"
+    df.index = pd.to_datetime(df["new_index"])
+    df.drop(columns="new_index", inplace=True)
+
+    return df
