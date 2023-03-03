@@ -2,6 +2,7 @@
 Routines used for investment results inspection for both, analyses of
 investments taken as well as the resulting dispatch of units resp. clusters.
 """
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -224,6 +225,7 @@ def plot_single_investment_variable(
     dr_scenario="none",
     path_plots="./plots/",
     path_data_out="./data_out/",
+    ylim=None,
 ):
     """Plot a single investment-related variable from results data set
 
@@ -265,6 +267,9 @@ def plot_single_investment_variable(
 
     path_data_out : str
         Path for storing the aggregated results data
+
+    ylim : list
+        y axis limits
     """
     ylabels = {
         "invest": "newly invested capacity",
@@ -280,7 +285,9 @@ def plot_single_investment_variable(
         plot_data = results.copy()
 
     fig, ax = plt.subplots(figsize=(12, 5))
-    create_single_plot(plot_data, variable_name, colors, storage, ax, ylabels)
+    create_single_plot(
+        plot_data, variable_name, colors, storage, ax, ylabels, ylim=ylim
+    )
 
     _ = plt.tight_layout()
 
@@ -537,6 +544,7 @@ def plot_single_dispatch_pattern(
     save=True,
     path_plots="./plots/",
     filename="dispatch_pattern",
+    kind="area",
 ):
     """Plot a single dispatch pattern for a given start and end time stamp
 
@@ -562,6 +570,9 @@ def plot_single_dispatch_pattern(
 
     filename : str
         File name to use for the plot
+
+    kind : str
+        Kind of plot to draw; defaults to "area"
     """
     index_start = int(dispatch_pattern.index.get_loc(start_time_step))
     index_end = int(index_start + amount_of_time_steps + 1)
@@ -569,7 +580,7 @@ def plot_single_dispatch_pattern(
 
     fig, ax = plt.subplots(figsize=(15, 10))
     _ = dispatch_pattern.iloc[index_start:index_end].plot(
-        ax=ax, kind="area", color=colors
+        ax=ax, kind=kind, color=colors
     )
     _ = ax.set_xlabel("Time")
     _ = ax.set_ylabel("Energy [MWh/h]")
@@ -593,3 +604,43 @@ def plot_single_dispatch_pattern(
 
     _ = plt.show()
     plt.close()
+
+
+def plot_time_series_cols(df, size=(15, 5)):
+    """Plot each column of a time series DataFrame in dedicated subplot
+
+    Parameters
+    ----------
+    df: pd.DataFrame
+        time series data to visualize
+
+    size: tuple of int
+        size of plot; first entry: width; second entry: height of single
+        subplot
+    """
+    fig, axs = plt.subplots(
+        len(df.columns), 1, figsize=(size[0], len(df.columns) * size[1])
+    )
+
+    for no, col in enumerate(df.columns):
+        try:
+            _ = df[col].plot(ax=axs[no])
+            _ = axs[no].set_title(col)
+        except TypeError:
+            warnings.warn(
+                f"No numeric data to plot for column: {col}", UserWarning
+            )
+
+    _ = plt.tight_layout()
+    _ = plt.show()
+    plt.close()
+
+
+def create_datetime_index(df: pd.DataFrame) -> pd.DataFrame:
+    """Return DataFrame with datetime index"""
+    df.loc[2051] = df.iloc[-1]
+    df["new_index"] = df.index.astype(str) + "-01-01"
+    df.index = pd.to_datetime(df["new_index"])
+    df.drop(columns="new_index", inplace=True)
+
+    return df
