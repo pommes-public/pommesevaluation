@@ -107,7 +107,11 @@ def preprocess_raw_results(results_raw, investments=True):
 
 
 def aggregate_investment_results(
-    processed_results, energy_carriers, by="energy_carrier", investments=True
+    processed_results,
+    energy_carriers,
+    by="energy_carrier",
+    investments=True,
+    include_chp_information=False,
 ):
     """Aggregate preprocesed investment results by energy carrier or technology
 
@@ -126,6 +130,9 @@ def aggregate_investment_results(
     investments : bool
         If True, analyse volumes invested into (MW);
         if False, analyse resulting production (MWh)
+
+    include_chp_information : bool
+        If True, distinct whether CHP is used or not for technology
 
     Returns
     -------
@@ -178,6 +185,13 @@ def aggregate_investment_results(
         aggregated_results["tech"].str.split("_", expand=True).iloc[:, 0],
         aggregated_results["unit"],
     )
+    if include_chp_information:
+        aggregated_results["technology"] = np.where(
+            aggregated_results["tech"].str.contains(technologies),
+            aggregated_results["tech"],
+            aggregated_results["unit"],
+        )
+
     if by not in [
         "energy_carrier",
         "technology",
@@ -224,6 +238,7 @@ def plot_single_investment_variable(
     dr_scenario="none",
     path_plots="./plots/",
     path_data_out="./data_out/",
+    ylim=None,
 ):
     """Plot a single investment-related variable from results data set
 
@@ -280,7 +295,7 @@ def plot_single_investment_variable(
         plot_data = results.copy()
 
     fig, ax = plt.subplots(figsize=(12, 5))
-    create_single_plot(plot_data, variable_name, colors, storage, ax, ylabels)
+    create_single_plot(plot_data, variable_name, colors, storage, ax, ylabels, ylim=ylim)
 
     _ = plt.tight_layout()
 
@@ -311,13 +326,63 @@ def group_results(
     aggregation : str or None
         Determines which kind of aggregation has been made;
         aggregation by `energy_carrier` or by `technology`
+
+    Returns
+    -------
+    grouped_data : pd.DataFrame
+        Grouped data set
     """
-    plot_data = results[[variable_name]].reset_index()
-    plot_data = plot_data.pivot(
+    grouped_data = results[[variable_name]].reset_index()
+    grouped_data = grouped_data.pivot(
         index=aggregation, columns="year", values=variable_name
     )
 
-    return plot_data
+    return grouped_data
+
+
+def extract_data_and_save(
+    results,
+    variable_name,
+    aggregation="energy_carrier",
+    group=True,
+    filename="results",
+    dr_scenario="none",
+    path_data_out="./data_out/",
+):
+    """Extract and group data from results data set
+
+    Parameters
+    ----------
+    results : pd.DataFrame
+        Data set containing all investment results
+
+    variable_name : str
+        Particular variable to plot;
+        one of ['invest', 'old', 'old_end', 'old_exo', 'total', 'all']
+
+    aggregation : str or None
+        Determines which kind of aggregation has been made;
+        aggregation by `energy_carrier` or by `technology`
+
+    group : bool
+        If True, group data by given aggregation type (default);
+        else use data as it has been given
+
+    filename : str
+        File name to use for saving to file
+
+    dr_scenario : str
+        Scenario for demand response that has been considered
+
+    path_data_out : str
+        Path for storing the aggregated results data
+    """
+    if group:
+        extracted_data = group_results(results, variable_name, aggregation)
+    else:
+        extracted_data = results.copy()
+
+    extracted_data.T.to_csv(f"{path_data_out}{filename}_{dr_scenario}.csv")
 
 
 def create_single_plot(
