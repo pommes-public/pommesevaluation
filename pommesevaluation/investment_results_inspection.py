@@ -78,10 +78,21 @@ def preprocess_raw_results(results_raw, investments=True):
         "from",
     ] = processed_results["to"]
 
-    # Adjust demand response inflows (should be the remainder!)
+    # Adjust links to foreign market areas
     processed_results.loc[
-        processed_results["from"].str.contains("DE_bus_el"), "from"
-    ] = (processed_results["to"] + "_demand_after")
+        (processed_results["from"].str.contains("DE_bus_el"))
+        & (processed_results["to"].str.contains("DE_link_")),
+        "from"
+    ] = processed_results["to"]
+
+    # Adjust demand response inflows
+    processed_results.loc[
+        (processed_results["from"].str.contains("DE_bus_el"))
+        & (processed_results["to"].str.contains("cluster_")),
+        "from",
+    ] = (
+        processed_results["to"] + "_demand_after"
+    )
 
     # Separate demand response variables
     processed_results.loc[
