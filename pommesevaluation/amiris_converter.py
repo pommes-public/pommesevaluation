@@ -1,6 +1,8 @@
 import pandas as pd
 import os
 
+from pommesevaluation.pommesinvest_routines import cut_leap_days
+
 
 def convert_annual_data_to_fame_time(
     df: pd.DataFrame,
@@ -210,5 +212,6 @@ def resample_to_hourly_frequency(
     resampled_data.index = pd.to_datetime(pd.Series(resampled_data.index))
     resampled_data = resampled_data.div(multiplier)
     resampled_data = resampled_data.resample("H").interpolate("ffill")[:-1]
+    resampled_data = cut_leap_days(resampled_data)
 
     return resampled_data
