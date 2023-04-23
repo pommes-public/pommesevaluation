@@ -343,7 +343,7 @@ def perform_efficiency_regression(
             power_plants_regression,
             save=True,
             path=f"{path}/amiris/all_scenarios/",
-            filename=f"{key}_{filename_suffix}",
+            filename=f"{key}{filename_suffix}",
         )
 
 
