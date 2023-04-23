@@ -1,5 +1,10 @@
-import pandas as pd
 import os
+from typing import Dict
+
+import numpy as np
+import pandas as pd
+import statsmodels.api as sm
+from matplotlib import pyplot as plt
 
 from pommesevaluation.pommesinvest_routines import cut_leap_days
 
@@ -86,7 +91,9 @@ def save_given_data_set_for_fame(
         else:
             for col in data_set.columns:
                 data_set[col].to_csv(
-                    f"{path}{filename}_{col[0]}_{col[1]}.csv", header=False, sep=";"
+                    f"{path}{filename}_{col[0]}_{col[1]}.csv",
+                    header=False,
+                    sep=";",
                 )
     elif isinstance(data_set, pd.Series):
         data_set.to_csv(f"{path}{filename}.csv", header=False, sep=";")
@@ -215,3 +222,153 @@ def resample_to_hourly_frequency(
     resampled_data = cut_leap_days(resampled_data)
 
     return resampled_data
+
+
+def group_transformers_data(
+    path: str,
+    file_name_transformers: str,
+    file_name_transformers_max: str = "transformers_exogenous_max_ts.csv",
+    unclustered: bool = False,
+) -> Dict[str, pd.DataFrame]:
+    """Group transformers data by 'tech_fuel' and return grouped data set
+
+    Parameters
+    ----------
+    path : str
+        Path to input file(s)
+
+    file_name_transformers : str
+        Name of file holding transformers data
+
+    file_name_transformers_max : str
+        Name of file holding maximum output development factors
+        (only for clustered data)
+
+    unclustered : bool
+        If True, use unclustered transformers data, else use clustered one
+
+    Returns
+    -------
+    dict
+        transformers data grouped by 'tech_fuel'
+    """
+
+    transformers = pd.read_csv(f"{path}{file_name_transformers}", index_col=0)
+    transformers = transformers.loc[transformers["country"] == "DE"]
+    if unclustered:
+        transformers.columns = [
+            col for col in transformers.columns if "20" not in col
+        ] + [col[:4] for col in transformers.columns if "20" in col]
+    else:
+        transformers_max_ts = pd.read_csv(
+            f"{path}{file_name_transformers_max}", index_col=0
+        )
+        transformers_capacity_ts = transformers_max_ts.mul(
+            transformers["capacity"]
+        )
+
+        # Prepare for grouping
+        transformers_capacity_ts.index = transformers_capacity_ts.index.str[:4]
+        transformers_capacity_ts_transposed = transformers_capacity_ts.T
+        transformers_capacity_ts_transposed[
+            ["efficiency_el", "tech_fuel"]
+        ] = transformers[["efficiency_el", "tech_fuel"]]
+        transformers = transformers_capacity_ts_transposed
+
+    return {
+        tech_fuel: plants.sort_values(by="efficiency_el")
+        for tech_fuel, plants in transformers.groupby("tech_fuel")
+    }
+
+
+def perform_efficiency_regression(
+    grouped_plants: pd.DataFrame,
+    plot: bool = False,
+    path: str = "./data_out/",
+    filename_suffix: str = "",
+):
+    """Perform a linear regression to determine min and max efficiencies"""
+    # Perform a regression analysis to derive efficiencies and calculate installed capacities meanwhile
+    for key, value in grouped_plants.items():
+        power_plants_regression = pd.DataFrame(
+            index=range(2020, 2051),
+            columns=[
+                "efficiency_min",
+                "efficiency_max",
+                "exogenous_installed_cap",
+            ],
+        )
+        for iter_year in range(2020, 2051):
+            value["cumulated_capacity"] = value[str(iter_year)].cumsum()
+
+            X = grouped_plants[key].cumulated_capacity.values
+            Y = grouped_plants[key].efficiency_el.values
+            X = sm.add_constant(X)
+
+            efficiency_regression = sm.OLS(Y, X).fit()
+
+            x = np.linspace(0, X.max(), int(X.max()))
+
+            # Multiple entries in group and different efficiency values
+            if len(Y) > 1 and len(efficiency_regression.params) > 1:
+                regression_function = (
+                    efficiency_regression.params[0]
+                    + efficiency_regression.params[1] * x
+                )
+                min_efficiency = max(0.1, round(regression_function[0], 4))
+                max_efficiency = round(regression_function[-1], 4)
+
+            # Only one entry in group or only one efficiecy value; thus no regression function
+            else:
+                min_efficiency = round(Y[0], 4)
+                max_efficiency = round(Y[0], 4)
+                regression_function = min_efficiency
+
+            if plot:
+                plot_regression_function(
+                    grouped_plants, str(key), regression_function, iter_year
+                )
+
+            power_plants_regression.at[
+                iter_year, "efficiency_min"
+            ] = min_efficiency
+            power_plants_regression.at[
+                iter_year, "efficiency_max"
+            ] = max_efficiency
+            power_plants_regression.at[
+                iter_year, "exogenous_installed_cap"
+            ] = value["cumulated_capacity"].iloc[-1]
+
+        _ = convert_annual_data_to_fame_time(
+            power_plants_regression,
+            save=True,
+            path=f"{path}/amiris/all_scenarios/",
+            filename=f"{key}_{filename_suffix}",
+        )
+
+
+def plot_regression_function(
+    grouped_plants: pd.DataFrame,
+    key: str,
+    regression_function: float or np.array,
+    iter_year: int,
+):
+    """Show a combined scatter and line plot of efficiency estimate"""
+    fig, ax = plt.subplots(figsize=(15, 5))
+
+    _ = grouped_plants[key].plot(
+        kind="scatter",
+        x="cumulated_capacity",
+        y="efficiency_el",
+        marker="D",
+        color="blue",
+        ax=ax,
+    )
+    _ = ax.plot(
+        regression_function,
+        linestyle="--",
+        color="k",
+    )
+    ax.set_title(key + "_" + str(iter_year))
+    _ = plt.tight_layout()
+    plt.show()
