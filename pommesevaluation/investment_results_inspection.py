@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 from matplotlib.ticker import FuncFormatter
 
 
-def preprocess_raw_results(results_raw, investments=True):
+def preprocess_raw_results(results_raw, investments=True, european_data=False):
     """Preprocess raw investment results - both, investments and dispatch
 
     Parameters
@@ -22,15 +22,34 @@ def preprocess_raw_results(results_raw, investments=True):
         If True, analyse volumes invested into (MW);
         if False, analyse resulting production (MWh)
 
+    european_data : bool
+        It True, extract dispatch data for european countries which
+        is (somehow) indexed differently
+
     Returns
     -------
     processed_results : pd.DataFrame
         Preprocessed investment results
     """
     processed_results = results_raw.copy()
-    processed_results.index = processed_results.index.str.split(expand=True)
+    if not european_data:
+        processed_results.index = processed_results.index.str.split(
+            expand=True
+        )
+    else:
+        processed_results = processed_results.reset_index(level=1, drop=False)
+        processed_results.index = processed_results.index.get_level_values(
+            0
+        ).str.split(expand=True)
+        processed_results = processed_results.set_index("level_1", append=True)
     processed_results.index.names = ["from", "to", "year"]
     processed_results.reset_index(inplace=True)
+    if european_data:
+        processed_results["to"] = np.where(
+            processed_results["to"].isna(),
+            processed_results["year"],
+            processed_results["to"],
+        )
     processed_results["from"] = processed_results["from"].str.strip("(',")
     processed_results["to"] = processed_results["to"].str.strip(")',")
     processed_results["year"] = processed_results["year"].str.strip(")")
@@ -82,7 +101,7 @@ def preprocess_raw_results(results_raw, investments=True):
     processed_results.loc[
         (processed_results["from"].str.contains("DE_bus_el"))
         & (processed_results["to"].str.contains("DE_link_")),
-        "from"
+        "from",
     ] = processed_results["to"]
 
     # Adjust demand response inflows
