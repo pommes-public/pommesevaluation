@@ -211,7 +211,9 @@ def extract_net_operation(
 
 
 def resample_to_hourly_frequency(
-    data: pd.Series or pd.DataFrame, multiplier: int
+    data: pd.Series or pd.DataFrame,
+    multiplier: int,
+    end_year: int = 2045,
 ) -> pd.Series or pd.DataFrame:
     """Resamples a given time series to hourly frequency
 
@@ -223,13 +225,18 @@ def resample_to_hourly_frequency(
     multiplier: int
         Multiplier for frequency conversion
 
+    end_year: int
+        Last year of time series
+
     Returns
     -------
     resampled_data: pd.Series or pd.DataFrame
         Data in hourly resolution
     """
     resampled_data = data.copy()
-    resampled_data.loc["2051-01-01 00:00:00"] = resampled_data.iloc[-1]
+    resampled_data.loc[f"{end_year + 1}-01-01 00:00:00"] = resampled_data.iloc[
+        -1
+    ]
     resampled_data.index = pd.to_datetime(pd.Series(resampled_data.index))
     resampled_data = resampled_data.div(multiplier)
     resampled_data = resampled_data.resample("H").interpolate("ffill")[:-1]
