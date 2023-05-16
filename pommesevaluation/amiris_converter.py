@@ -305,7 +305,7 @@ def group_transformers_data(
 def perform_efficiency_regression(
     grouped_plants: pd.DataFrame,
     plot: bool = False,
-    path: str = "./data_out/",
+    path: str = "./data_out/amiris/",
     filename_suffix: str = "",
 ):
     """Perform a linear regression to determine min and max efficiencies"""
@@ -363,7 +363,7 @@ def perform_efficiency_regression(
         _ = convert_annual_data_to_fame_time(
             power_plants_regression,
             save=True,
-            path=f"{path}/amiris/all_scenarios/",
+            path=f"{path}all_scenarios/",
             filename=f"{key}{filename_suffix}",
         )
 
