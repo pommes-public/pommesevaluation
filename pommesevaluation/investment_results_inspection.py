@@ -639,6 +639,8 @@ def plot_single_dispatch_pattern(
     path_plots="./plots/",
     filename="dispatch_pattern",
     kind="area",
+    stacked=None,
+    figsize=(15, 10),
 ):
     """Plot a single dispatch pattern for a given start and end time stamp
 
@@ -667,15 +669,26 @@ def plot_single_dispatch_pattern(
 
     kind : str
         Kind of plot to draw; defaults to "area"
+
+    stacked : bool
+        If True, draw a stacked (bar) chart
+
+    figsize : tuple of int
+        Size of plot
     """
     index_start = int(dispatch_pattern.index.get_loc(start_time_step))
     index_end = int(index_start + amount_of_time_steps + 1)
     end_time_step = dispatch_pattern.iloc[index_end].name
 
-    fig, ax = plt.subplots(figsize=(15, 10))
-    _ = dispatch_pattern.iloc[index_start:index_end].plot(
-        ax=ax, kind=kind, color=colors
-    )
+    fig, ax = plt.subplots(figsize=figsize)
+    if kind == "bar" and stacked:
+        _ = dispatch_pattern.iloc[index_start:index_end].plot(
+            ax=ax, kind=kind, color=colors, stacked=stacked
+        )
+    else:
+        _ = dispatch_pattern.iloc[index_start:index_end].plot(
+            ax=ax, kind=kind, color=colors
+        )
     _ = ax.set_xlabel("Time")
     _ = ax.set_ylabel("Energy [MWh/h]")
     _ = plt.title(
