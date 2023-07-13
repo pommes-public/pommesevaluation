@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 from matplotlib.ticker import FuncFormatter
 
 
-def preprocess_raw_results(results_raw, investments=True, european_data=False):
+def preprocess_raw_results(results_raw, investments=True, multi_header=False):
     """Preprocess raw investment results - both, investments and dispatch
 
     Parameters
@@ -22,9 +22,9 @@ def preprocess_raw_results(results_raw, investments=True, european_data=False):
         If True, analyse volumes invested into (MW);
         if False, analyse resulting production (MWh)
 
-    european_data : bool
-        It True, extract dispatch data for european countries which
-        is (somehow) indexed differently
+    multi_header : bool
+        It True, extract dispatch data that has a multi-index header
+        with two levels
 
     Returns
     -------
@@ -32,7 +32,7 @@ def preprocess_raw_results(results_raw, investments=True, european_data=False):
         Preprocessed investment results
     """
     processed_results = results_raw.copy()
-    if not european_data:
+    if not multi_header:
         processed_results.index = processed_results.index.str.split(
             expand=True
         )
@@ -44,7 +44,7 @@ def preprocess_raw_results(results_raw, investments=True, european_data=False):
         processed_results = processed_results.set_index("level_1", append=True)
     processed_results.index.names = ["from", "to", "year"]
     processed_results.reset_index(inplace=True)
-    if european_data:
+    if multi_header:
         processed_results["to"] = np.where(
             processed_results["to"].isna(),
             processed_results["year"],
