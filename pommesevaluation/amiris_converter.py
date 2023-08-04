@@ -166,6 +166,8 @@ def extract_net_operation(
     outflow_column_str: str,
     inflow_column_str: str,
     multi_index: bool = True,
+    add_outflow_str: str = "",
+    add_inflow_str: str = "",
 ) -> pd.Series:
     """Extracts net storage resp. import and exports operation
 
@@ -186,6 +188,12 @@ def extract_net_operation(
     multi_index: bool
         If True, assume df columns to be a pd.MultiIndex with two levels
 
+    add_outflow_str: str
+        Additional string value that needs to be matched for outflow columns
+
+    add_inflow_str: str
+        Additional string value that needs to be matched for inflow columns
+
     Returns
     -------
     pd.Series
@@ -194,14 +202,30 @@ def extract_net_operation(
         filtered_df = df[
             [col for col in df.columns if column_str in col[0]]
         ].copy()
-        outflows = [col for col in filtered_df if outflow_column_str in col[0]]
-        inflows = [col for col in filtered_df if inflow_column_str in col[0]]
+        outflows = [
+            col
+            for col in filtered_df
+            if outflow_column_str in col[0] and add_outflow_str in col[0]
+        ]
+        inflows = [
+            col
+            for col in filtered_df
+            if inflow_column_str in col[0] and add_inflow_str in col[0]
+        ]
     else:
         filtered_df = df[
             [col for col in df.columns if column_str in col]
         ].copy()
-        outflows = [col for col in filtered_df if outflow_column_str in col]
-        inflows = [col for col in filtered_df if inflow_column_str in col]
+        outflows = [
+            col
+            for col in filtered_df
+            if outflow_column_str in col and add_outflow_str in col
+        ]
+        inflows = [
+            col
+            for col in filtered_df
+            if inflow_column_str in col and add_inflow_str in col
+        ]
 
     filtered_df["outflows"] = filtered_df[outflows].sum(axis=1)
     filtered_df["inflows"] = -filtered_df[inflows].sum(axis=1)
