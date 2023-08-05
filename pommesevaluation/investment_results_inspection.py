@@ -641,6 +641,9 @@ def plot_single_dispatch_pattern(
     kind="area",
     stacked=None,
     figsize=(15, 10),
+    title=None,
+    ylabel=None,
+    linestyle=None,
 ):
     """Plot a single dispatch pattern for a given start and end time stamp
 
@@ -675,6 +678,15 @@ def plot_single_dispatch_pattern(
 
     figsize : tuple of int
         Size of plot
+
+    title : str
+        String to display in plot title
+
+    ylabel : str
+        String to use for labelling y label
+
+    linestyle : dict
+        Linestyles to use in case of a line plot
     """
     index_start = int(dispatch_pattern.index.get_loc(start_time_step))
     index_end = int(index_start + amount_of_time_steps)
@@ -685,14 +697,23 @@ def plot_single_dispatch_pattern(
         _ = dispatch_pattern.iloc[index_start : index_end + 1].plot(
             ax=ax, kind=kind, color=colors, stacked=stacked
         )
+    elif linestyle:
+        for col in dispatch_pattern.columns:
+            _ = dispatch_pattern[col].iloc[index_start : index_end + 1].plot(
+                ax=ax, kind=kind, color=colors[col], linestyle=linestyle[col]
+            )
     else:
         _ = dispatch_pattern.iloc[index_start : index_end + 1].plot(
             ax=ax, kind=kind, color=colors
         )
     _ = ax.set_xlabel("Time")
-    _ = ax.set_ylabel("Energy [MWh/h]")
+    if not ylabel:
+        ylabel = "Energy [MWh/h]"
+    _ = ax.set_ylabel(ylabel)
+    if not title:
+        title = "Dispatch situation"
     _ = plt.title(
-        f"Dispatch situation from {start_time_step} to {end_time_step}"
+        f"{title} from {start_time_step} to {end_time_step}"
     )
     _ = plt.legend(bbox_to_anchor=[1.02, 1.05])
     _ = plt.xticks(rotation=90)
