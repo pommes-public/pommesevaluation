@@ -151,8 +151,8 @@ def aggregate_investment_results(
     processed_results : pd.DataFrame
         Preprocessed investment results
 
-    energy_carriers : list
-        List of feasible energy carriers
+    energy_carriers : iterable
+        Feasible energy carriers
 
     by : str or list of str
         Rule to group by; either `energy_carrier` or `technology`
