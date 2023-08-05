@@ -677,16 +677,16 @@ def plot_single_dispatch_pattern(
         Size of plot
     """
     index_start = int(dispatch_pattern.index.get_loc(start_time_step))
-    index_end = int(index_start + amount_of_time_steps + 1)
-    end_time_step = dispatch_pattern.iloc[index_end - 1].name
+    index_end = int(index_start + amount_of_time_steps)
+    end_time_step = dispatch_pattern.iloc[index_end].name
 
     fig, ax = plt.subplots(figsize=figsize)
     if kind == "bar" and stacked:
-        _ = dispatch_pattern.iloc[index_start:index_end].plot(
+        _ = dispatch_pattern.iloc[index_start : index_end + 1].plot(
             ax=ax, kind=kind, color=colors, stacked=stacked
         )
     else:
-        _ = dispatch_pattern.iloc[index_start:index_end].plot(
+        _ = dispatch_pattern.iloc[index_start : index_end + 1].plot(
             ax=ax, kind=kind, color=colors
         )
     _ = ax.set_xlabel("Time")
