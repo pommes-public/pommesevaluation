@@ -678,7 +678,7 @@ def plot_single_dispatch_pattern(
     """
     index_start = int(dispatch_pattern.index.get_loc(start_time_step))
     index_end = int(index_start + amount_of_time_steps + 1)
-    end_time_step = dispatch_pattern.iloc[index_end].name
+    end_time_step = dispatch_pattern.iloc[index_end - 1].name
 
     fig, ax = plt.subplots(figsize=figsize)
     if kind == "bar" and stacked:
