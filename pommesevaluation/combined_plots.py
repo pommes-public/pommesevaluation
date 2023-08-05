@@ -1,5 +1,3 @@
-import datetime
-
 from matplotlib import pyplot as plt
 
 
