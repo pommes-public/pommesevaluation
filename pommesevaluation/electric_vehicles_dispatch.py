@@ -66,6 +66,7 @@ def draw_weekly_plot(
     simulation_year,
     color=None,
     ylim=None,
+    file_name=None,
 ):
     """Draw weekly ev dispatch plots
 
@@ -79,7 +80,16 @@ def draw_weekly_plot(
 
     color : list or str
         Color(s) to be used
+
+    ylim: list
+        y axis limits
+
+    file_name: str or none
+        File name pattern to apply for weekly plots
     """
+    if not file_name:
+        file_name = "dispatch"
+
     for week in range(52):
         title = f"Dispatch pattern for {simulation_year} in week: {week + 1}"
 
@@ -90,5 +100,5 @@ def draw_weekly_plot(
             ylim=ylim,
             show=False,
             save=True,
-            file_name=f"dispatch_{simulation_year}_week_{week + 1}",
+            file_name=f"{file_name}_{simulation_year}_week_{week + 1}",
         )
