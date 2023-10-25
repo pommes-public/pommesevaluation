@@ -536,6 +536,7 @@ def plot_single_investment_variable_for_all_cases(
     filename="results",
     path_plots="./plots/",
     ylim=None,
+    title="Demand Response scenario",
 ):
     """Plot investment variable; create subplots to compare among scenarios
 
@@ -577,6 +578,9 @@ def plot_single_investment_variable_for_all_cases(
 
     ylim : list
         Common yaxis limit to share among the plots
+
+    title : str
+        Title of the plot
     """
     ylabels = {
         "invest": "newly invested capacity",
@@ -615,7 +619,7 @@ def plot_single_investment_variable_for_all_cases(
             storage,
             axs[number],
             ylabels,
-            title=f"Demand Response scenario {dr_scenario}",
+            title=f"{title} {dr_scenario}",
             legend=False,
             hide_axis=hide_axis,
             ylim=ylim,
