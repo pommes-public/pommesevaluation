@@ -16,7 +16,6 @@ class InvestmentModelDummy:
         overlap_in_time_steps,
         freq,
         fuel_cost_pathway,
-        fuel_price_shock,
         emissions_cost_pathway,
         flexibility_options_scenario,
         activate_emissions_pathway_limit,
@@ -32,7 +31,6 @@ class InvestmentModelDummy:
         self.overlap_in_time_steps = overlap_in_time_steps
         self.freq = freq
         self.fuel_cost_pathway = fuel_cost_pathway
-        self.fuel_price_shock = fuel_price_shock
         self.emissions_cost_pathway = emissions_cost_pathway
         self.flexibility_options_scenario = flexibility_options_scenario
         self.activate_emissions_pathway_limit = (
@@ -169,8 +167,7 @@ def process_input_data(im: InvestmentModelDummy) -> Dict[str, pd.DataFrame]:
     annual_time_series = {
         "transformers_exogenous_max_ts": "transformers_exogenous_max_ts",
         "costs_fuel_ts": (
-            f"costs_fuel_{im.fuel_cost_pathway}_"
-            f"{im.fuel_price_shock}_nominal_indexed_ts"
+            f"costs_fuel_{im.fuel_cost_pathway}_nominal_indexed_ts"
         ),
         "costs_emissions_ts": (
             f"costs_emissions_{im.emissions_cost_pathway}_nominal_indexed_ts"
