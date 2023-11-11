@@ -65,7 +65,10 @@ def preprocess_raw_results(results_raw, investments=True, multi_header=False):
 
     processed_results.loc[
         (processed_results["from"].str.contains("storage"))
-        & (processed_results["to"].str.contains("DE_bus_el")),
+        & (
+            (processed_results["to"].str.contains("DE_bus_el"))
+            | (processed_results["to"].str.contains("DE_bus_ev"))
+        ),
         "from",
     ] = (
         processed_results["from"] + "_inflow"
@@ -144,7 +147,7 @@ def aggregate_investment_results(
     investments=True,
     include_chp_information=False,
 ):
-    """Aggregate preprocesed investment results by energy carrier or technology
+    """Aggregate preprocessed investment results by energy carrier / technology
 
     Parameters
     ----------
@@ -179,11 +182,6 @@ def aggregate_investment_results(
     aggregated_results[["fuel", "tech"]] = aggregated_results[
         "unit"
     ].str.split("_", 1, expand=True)
-
-    # Account for naming convention of exogenous units (dispatch only)
-    aggregated_results.loc[
-        aggregated_results["fuel"] == "transformer", "fuel"
-    ] = aggregated_results["unit"].str.split("_", 2, expand=True)[1]
 
     # Account for electrolyzers
     aggregated_results.loc[
@@ -703,8 +701,15 @@ def plot_single_dispatch_pattern(
         )
     elif linestyle:
         for col in dispatch_pattern.columns:
-            _ = dispatch_pattern[col].iloc[index_start : index_end + 1].plot(
-                ax=ax, kind=kind, color=colors[col], linestyle=linestyle[col]
+            _ = (
+                dispatch_pattern[col]
+                .iloc[index_start : index_end + 1]
+                .plot(
+                    ax=ax,
+                    kind=kind,
+                    color=colors[col],
+                    linestyle=linestyle[col],
+                )
             )
     else:
         _ = dispatch_pattern.iloc[index_start : index_end + 1].plot(
@@ -716,9 +721,7 @@ def plot_single_dispatch_pattern(
     _ = ax.set_ylabel(ylabel)
     if not title:
         title = "Dispatch situation"
-    _ = plt.title(
-        f"{title} from {start_time_step} to {end_time_step}"
-    )
+    _ = plt.title(f"{title} from {start_time_step} to {end_time_step}")
     _ = plt.legend(bbox_to_anchor=[1.02, 1.05])
     _ = plt.xticks(rotation=90)
     _ = plt.tight_layout()
