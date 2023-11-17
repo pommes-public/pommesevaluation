@@ -96,6 +96,24 @@ def create_datestamps(x):
     )
 
 
+def read_and_reshape_smard_prices(year: int, file_name: str):
+    """Read in prices from SMARD in Excel format and reshape them"""
+    power_prices = pd.read_excel(
+        file_name, sheet_name="Großhandelspreise", skiprows=9, index_col=0
+    )
+    power_prices["new_idx"] = power_prices.index + " " + power_prices["Anfang"]
+    set_new_index(power_prices)
+    power_prices = power_prices.loc[
+        power_prices.index.year == year, ["Deutschland/Luxemburg [€/MWh]"]
+    ]
+    power_prices.rename(
+        columns={"Deutschland/Luxemburg [€/MWh]": "historical_price"},
+        inplace=True,
+    )
+
+    return power_prices
+
+
 def compare_or_show_negative_price_distribution(
     model_prices,
     year,
