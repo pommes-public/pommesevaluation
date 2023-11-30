@@ -114,28 +114,27 @@ def read_and_reshape_smard_prices(year: int, file_name: str):
     return power_prices
 
 
-def compare_or_show_negative_price_distribution(
+def compare_or_show_price_distribution(
     model_prices,
-    year,
     historical_prices=None,
+    figsize=(15, 5),
+    bins=30,
     save=True,
     path_plots="./plots/",
+    xlabel="power prices",
+    content="negative price distribution",
     file_name="negative_price_distribution",
 ):
-    """Draw a histogram comparing negative prices of model to historical"""
-    fig, ax = plt.subplots()
-    model_prices.loc[model_prices.model_price < 0].model_price.plot(
-        kind="hist", bins=30, color="r", alpha=0.3, ax=ax
-    )
-    if historical_prices or year <= 2022:
-        historical_prices[year].loc[
-            historical_prices[year].historical_price < 0
-        ].historical_price.plot(kind="hist", bins=30, alpha=0.3, ax=ax)
-        title = "Comparison of negative price distribution"
+    """Draw a histogram comparing (negative) prices of model to historical"""
+    fig, ax = plt.subplots(figsize=figsize)
+    model_prices.plot(kind="hist", bins=bins, color="r", alpha=0.3, ax=ax)
+    if historical_prices is not None:
+        historical_prices.plot(kind="hist", bins=bins, alpha=0.3, ax=ax)
+        title = f"Comparison of {content}"
     else:
-        title = "Negative price distribution"
+        title = content
     plt.title(title)
-    plt.xlabel("power price")
+    plt.xlabel(xlabel)
     plt.legend()
 
     _ = plt.tight_layout()
