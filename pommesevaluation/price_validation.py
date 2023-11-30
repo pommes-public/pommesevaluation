@@ -118,6 +118,7 @@ def compare_or_show_price_distribution(
     model_prices,
     historical_prices=None,
     figsize=(15, 5),
+    bins=30,
     save=True,
     path_plots="./plots/",
     xlabel="power prices",
@@ -126,9 +127,9 @@ def compare_or_show_price_distribution(
 ):
     """Draw a histogram comparing (negative) prices of model to historical"""
     fig, ax = plt.subplots(figsize=figsize)
-    model_prices.plot(kind="hist", bins=30, color="r", alpha=0.3, ax=ax)
+    model_prices.plot(kind="hist", bins=bins, color="r", alpha=0.3, ax=ax)
     if historical_prices is not None:
-        historical_prices.plot(kind="hist", bins=30, alpha=0.3, ax=ax)
+        historical_prices.plot(kind="hist", bins=bins, alpha=0.3, ax=ax)
         title = f"Comparison of {content}"
     else:
         title = content
