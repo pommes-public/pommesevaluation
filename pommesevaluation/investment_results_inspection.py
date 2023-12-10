@@ -268,6 +268,8 @@ def plot_single_investment_variable(
     path_plots="./plots/",
     path_data_out="./data_out/",
     ylim=None,
+    format_axis=True,
+    draw_xlabel=True,
 ):
     """Plot a single investment-related variable from results data set
 
@@ -312,6 +314,12 @@ def plot_single_investment_variable(
 
     ylim : list
         y axis limits
+
+    format_axis : boolean
+        If True, format the yaxis to int values
+
+    draw_xlabel : boolean
+        If True, add xaxis label to plot
     """
     ylabels = {
         "invest": "newly invested capacity",
@@ -320,6 +328,7 @@ def plot_single_investment_variable(
         "old_exo": "capacity decommissioned because after initial age",
         "total": "total installed capacity",
         "all": "overall installed capacity",
+        "potential": "potential vs. realised capacity",
     }
     if group:
         plot_data = group_results(results, variable_name, aggregation)
@@ -328,7 +337,15 @@ def plot_single_investment_variable(
 
     fig, ax = plt.subplots(figsize=(12, 5))
     create_single_plot(
-        plot_data, variable_name, colors, storage, ax, ylabels, ylim=ylim
+        plot_data,
+        variable_name,
+        colors,
+        storage,
+        ax,
+        ylabels,
+        ylim=ylim,
+        format_axis=format_axis,
+        draw_xlabel=draw_xlabel,
     )
 
     _ = plt.tight_layout()
@@ -430,6 +447,9 @@ def create_single_plot(
     legend=True,
     hide_axis=False,
     ylim=None,
+    format_axis=True,
+    draw_xlabel=True,
+    draw_ylabel=True,
 ):
     """Create one single investment results plot"""
     if not storage:
@@ -497,7 +517,7 @@ def create_single_plot(
             _ = energy_results.T.plot(kind="bar", stacked=True, ax=ax)
             _ = power_results.T.plot(kind="bar", stacked=True, ax=ax)
 
-        if not hide_axis:
+        if draw_ylabel:
             _ = ax2.set_ylabel(f"{ylabels[variable_name]} in MWh")
 
     if title:
@@ -508,8 +528,12 @@ def create_single_plot(
     if hide_axis:
         _ = ax.get_xaxis().set_visible(False)
     else:
-        _ = plt.xlabel("year")
-        _ = ax.set_ylabel(f"{ylabels[variable_name]} in MW")
+        if draw_xlabel:
+            _ = plt.xlabel("year")
+        else:
+            ax.get_xaxis().label.set_visible(False)
+        if draw_ylabel:
+            _ = ax.set_ylabel(f"{ylabels[variable_name]} in MW")
 
     if ylim:
         _ = ax.set_ylim(ylim)
@@ -517,9 +541,10 @@ def create_single_plot(
     # _ = plt.gca().set_yticklabels(
     #     ["{:,.0f}".format(x) for x in current_values]
     # )
-    _ = ax.get_yaxis().set_major_formatter(
-        FuncFormatter(lambda x, p: format(int(x), ","))
-    )
+    if format_axis:
+        _ = ax.get_yaxis().set_major_formatter(
+            FuncFormatter(lambda x, p: format(int(x), ","))
+        )
 
 
 def plot_single_investment_variable_for_all_cases(
@@ -535,6 +560,10 @@ def plot_single_investment_variable_for_all_cases(
     path_plots="./plots/",
     ylim=None,
     title="Demand Response scenario",
+    format_axis=True,
+    draw_ylabel=False,
+    include_common_xlabel=True,
+    figwidth=12,
 ):
     """Plot investment variable; create subplots to compare among scenarios
 
@@ -579,6 +608,21 @@ def plot_single_investment_variable_for_all_cases(
 
     title : str
         Title of the plot
+
+    format_axis : boolean
+        If True, format the yaxis to int values
+
+    draw_xlabel : boolean
+        If True, add xaxis label to plot
+
+    draw_ylabel : boolean
+        If True, add ylabel to last subplot
+
+    include_common_xlabel : boolean
+        If True, draw a common xlabel
+
+    figwidth : int
+        Width of figure
     """
     ylabels = {
         "invest": "newly invested capacity",
@@ -587,10 +631,11 @@ def plot_single_investment_variable_for_all_cases(
         "old_exo": "capacity decommissioned because after initial age",
         "total": "total installed capacity",
         "all": "overall installed capacity",
+        "potential": "potential vs. realised capacity",
     }
 
     fig, axs = plt.subplots(
-        len(results_dict), 1, figsize=(12, 3 * len(results_dict))
+        len(results_dict), 1, figsize=(figwidth, 3 * len(results_dict))
     )
     hide_axis = True
     for number, item in enumerate(results_dict.items()):
@@ -621,7 +666,32 @@ def plot_single_investment_variable_for_all_cases(
             legend=False,
             hide_axis=hide_axis,
             ylim=ylim,
+            format_axis=format_axis,
+            draw_xlabel=False,
+            draw_ylabel=draw_ylabel,
         )
+
+    # Use common axes across plot
+    if storage:
+        fig.text(
+            1.01,
+            0.52,
+            f"{ylabels[variable_name]} in MWh",
+            va="center",
+            rotation="vertical",
+        )
+        xaxis_label_pos = 0.5
+    else:
+        xaxis_label_pos = 0.53
+    if include_common_xlabel:
+        fig.text(xaxis_label_pos, -0.01, "year", ha="center")
+    fig.text(
+        -0.01,
+        0.52,
+        f"{ylabels[variable_name]} in MW",
+        va="center",
+        rotation="vertical",
+    )
 
     _ = plt.tight_layout()
 
