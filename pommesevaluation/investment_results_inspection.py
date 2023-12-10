@@ -517,7 +517,7 @@ def create_single_plot(
             _ = energy_results.T.plot(kind="bar", stacked=True, ax=ax)
             _ = power_results.T.plot(kind="bar", stacked=True, ax=ax)
 
-        if not hide_axis:
+        if draw_ylabel:
             _ = ax2.set_ylabel(f"{ylabels[variable_name]} in MWh")
 
     if title:
@@ -672,8 +672,19 @@ def plot_single_investment_variable_for_all_cases(
         )
 
     # Use common axes across plot
+    if storage:
+        fig.text(
+            1.01,
+            0.52,
+            f"{ylabels[variable_name]} in MWh",
+            va="center",
+            rotation="vertical",
+        )
+        xaxis_label_pos = 0.5
+    else:
+        xaxis_label_pos = 0.53
     if include_common_xlabel:
-        fig.text(0.53, -0.01, "year", ha="center")
+        fig.text(xaxis_label_pos, -0.01, "year", ha="center")
     fig.text(
         -0.01,
         0.52,
