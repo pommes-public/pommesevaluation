@@ -741,6 +741,104 @@ def plot_single_dispatch_pattern(
     plt.close()
 
 
+def plot_generation_and_comsumption_pattern(
+    data,
+    start_time_step,
+    amount_of_time_steps,
+    colors,
+    figsize=(15, 10),
+    title=None,
+    ylabel=None,
+    save=True,
+    path_plots="./plots/",
+    filename="dispatch_pattern",
+):
+    """Plot combined generation and consumption pattern as stacked are chart
+
+    Generation is depicted in the positive range;
+    consumption in the negative range
+
+    Solution taken from this stackoverflow issue:
+    https://stackoverflow.com/questions/52872938/stacked-area-plot-in-python-with-positive-and-negative-values,
+    accessed 11.12.2023
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Data for plotting
+
+    start_time_step : str
+        First time step of excerpt displayed
+
+    amount_of_time_steps : int or float
+        Number of time steps to be displayed
+
+    colors : dict
+        Colors to use for the plot
+
+    figsize : tuple of int
+        Size of plot
+
+    title : str
+        String to display in plot title
+
+    ylabel : str
+        String to use for labelling y label
+
+    save : bool
+        Indicates whether to save the plot
+
+    path_plots : str
+        Path to use for storing the plot
+
+    filename : str
+        File name to use for the plot
+    """
+    index_start = int(data.index.get_loc(start_time_step))
+    index_end = int(index_start + amount_of_time_steps)
+    end_time_step = data.iloc[index_end].name
+    data = data.iloc[index_start : index_end + 1]
+
+    fig, ax = plt.subplots(figsize=figsize)
+    df_neg, df_pos = data.clip(upper=0), data.clip(lower=0)
+    _ = df_pos.plot.area(ax=ax, stacked=True, linewidth=0.0, color=colors)
+    _ = ax.set_prop_cycle(None)
+    _ = df_neg.rename(columns=lambda x: "_" + x).plot.area(
+        ax=ax,
+        stacked=True,
+        linewidth=0.0,
+        color={"_" + k: v for k, v in colors.items()},
+    )
+    _ = ax.set_ylim(
+        [df_neg.sum(axis=1).min() * 1.05, df_pos.sum(axis=1).max() * 1.05]
+    )
+    _ = plt.legend(bbox_to_anchor=[1.01, 1.01])
+    _ = plt.xticks(rotation=90)
+    _ = ax.set_xlabel("Time")
+    if not ylabel:
+        ylabel = "Energy [MWh/h]"
+    _ = ax.set_ylabel(ylabel)
+    if not title:
+        title = "Dispatch situation"
+    _ = plt.title(f"{title} from {start_time_step} to {end_time_step}")
+    _ = plt.legend(bbox_to_anchor=[1.02, 1.05])
+    _ = plt.xticks(rotation=90)
+    _ = plt.tight_layout()
+    _ = plt.show()
+    if save:
+        file_name_out = (
+            f"{path_plots}{filename}_{start_time_step}-{end_time_step}.png"
+        )
+        file_name_out = file_name_out.replace(":", "-").replace(" ", "_")
+        file_name_out.replace(":", "-")
+        _ = plt.savefig(
+            file_name_out,
+            dpi=300,
+        )
+
+    plt.close()
+
+
 def plot_time_series_cols(df, size=(15, 5)):
     """Plot each column of a time series DataFrame in dedicated subplot
 
