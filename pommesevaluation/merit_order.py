@@ -1,6 +1,24 @@
-﻿import numpy as np
+﻿import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+
+from pommesevaluation.pommesinvest_routines import resample_timeseries
+
+
+def extract_costs_data_for_investment_model(
+    file_name: str, frequency: str, time: str, col_name: str
+):
+    """Extract and filter costs information for investment model"""
+    data = pd.read_csv(file_name, index_col=0)
+    data = data[[col for col in data if "DE_" in col]]
+    data.columns = [col.split("_")[-1] for col in data.columns]
+    data.loc["2051-01-01"] = data.loc["2050-01-01"]
+    data = resample_timeseries(
+        data, freq=frequency, interpolation_rule="linear"
+    )[:-1]
+    data = data.loc[[time]].T
+    data.columns = [col_name]
+    return data
 
 
 def prepare_market_values_from_results(costs_market_values, simulation_year):
