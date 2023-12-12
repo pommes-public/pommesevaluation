@@ -716,6 +716,7 @@ def plot_single_dispatch_pattern(
     title=None,
     ylabel=None,
     linestyle=None,
+    return_plot=False,
 ):
     """Plot a single dispatch pattern for a given start and end time stamp
 
@@ -759,6 +760,9 @@ def plot_single_dispatch_pattern(
 
     linestyle : dict
         Linestyles to use in case of a line plot
+
+    return_plot : boolean
+        If True, return plot before showing / saving
     """
     index_start = int(dispatch_pattern.index.get_loc(start_time_step))
     index_end = int(index_start + amount_of_time_steps)
@@ -794,6 +798,85 @@ def plot_single_dispatch_pattern(
     _ = plt.title(f"{title} from {start_time_step} to {end_time_step}")
     _ = plt.legend(bbox_to_anchor=[1.02, 1.05])
     _ = plt.xticks(rotation=90)
+    _ = plt.margins(0, 0.05)
+    if return_plot:
+        if save:
+            print("Did not save, but return plot.")
+        return fig, ax
+
+    _ = plt.tight_layout()
+
+    if save:
+        file_name_out = (
+            f"{path_plots}{filename}_{start_time_step}-{end_time_step}.png"
+        )
+        file_name_out = file_name_out.replace(":", "-").replace(" ", "_")
+        file_name_out.replace(":", "-")
+        _ = plt.savefig(
+            file_name_out,
+            dpi=300,
+        )
+
+    _ = plt.show()
+    plt.close()
+
+
+def add_area_to_existing_plot(
+    data,
+    start_time_step,
+    amount_of_time_steps,
+    colors,
+    ax,
+    save=True,
+    path_plots="./plots/",
+    filename="area_plot",
+):
+    """Add a stacked area to plot
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Data to plot
+
+    start_time_step : str
+        First time step of excerpt displayed
+
+    amount_of_time_steps : int or float
+        Number of time steps to be displayed
+
+    colors : Dict
+        Colors to use
+
+    ax : matplotlib.axes.Axes
+        matplotlib axes object
+
+    save : bool
+        Indicates whether to save the plot
+
+    path_plots : str
+        Path to use for storing the plot
+
+    filename : str
+        File name to use for the plot
+
+    """
+    index_start = int(data.index.get_loc(start_time_step))
+    index_end = int(index_start + amount_of_time_steps)
+    end_time_step = data.iloc[index_end].name
+
+    _ = (
+        data.rename(columns=lambda x: "_" + x)
+        .iloc[index_start : index_end + 1]
+        .plot(
+            kind="area",
+            color={"_" + x: color for x, color in colors.items()},
+            alpha=0.3,
+            ax=ax,
+            legend=False,
+        )
+    )
+    _ = plt.xticks(rotation=90)
+    _ = plt.legend(bbox_to_anchor=[1.02, 1.05])
     _ = plt.tight_layout()
 
     if save:
