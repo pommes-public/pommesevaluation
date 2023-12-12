@@ -71,7 +71,7 @@ def preprocess_raw_results(results_raw, investments=True, multi_header=False):
         ),
         "from",
     ] = (
-        processed_results["from"] + "_inflow"
+        processed_results["from"] + "_outflow"
     )
 
     processed_results.loc[
@@ -79,7 +79,7 @@ def preprocess_raw_results(results_raw, investments=True, multi_header=False):
         & (processed_results["to"].str.contains("storage")),
         "from",
     ] = (
-        processed_results["to"] + "_outflow"
+        processed_results["to"] + "_inflow"
     )
 
     # Adjust sink labels
@@ -823,6 +823,7 @@ def plot_generation_and_comsumption_pattern(
     _ = plt.title(f"{title} from {start_time_step} to {end_time_step}")
     _ = plt.legend(bbox_to_anchor=[1.02, 1.05])
     _ = plt.xticks(rotation=90)
+    _ = plt.margins(0)
     _ = plt.tight_layout()
     _ = plt.show()
     if save:
