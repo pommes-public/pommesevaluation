@@ -758,9 +758,11 @@ def plot_generation_and_comsumption_pattern(
     amount_of_time_steps,
     colors,
     figsize=(15, 10),
+    kind="area",
     title=None,
     ylabel=None,
     save=True,
+    single_hour=False,
     path_plots="./plots/",
     filename="dispatch_pattern",
 ):
@@ -790,6 +792,9 @@ def plot_generation_and_comsumption_pattern(
     figsize : tuple of int
         Size of plot
 
+    kind : str
+        Kind of plot to generate (area or bar)
+
     title : str
         String to display in plot title
 
@@ -798,6 +803,9 @@ def plot_generation_and_comsumption_pattern(
 
     save : bool
         Indicates whether to save the plot
+
+    single_hour : bool
+        If True, adapt title to relect single hour dispatch situation
 
     path_plots : str
         Path to use for storing the plot
@@ -812,9 +820,10 @@ def plot_generation_and_comsumption_pattern(
 
     fig, ax = plt.subplots(figsize=figsize)
     df_neg, df_pos = data.clip(upper=0), data.clip(lower=0)
-    _ = df_pos.plot.area(ax=ax, stacked=True, linewidth=0.0, color=colors)
+    _ = df_pos.plot(kind=kind, ax=ax, stacked=True, linewidth=0.0, color=colors)
     _ = ax.set_prop_cycle(None)
-    _ = df_neg.rename(columns=lambda x: "_" + x).plot.area(
+    _ = df_neg.rename(columns=lambda x: "_" + x).plot(
+        kind=kind,
         ax=ax,
         stacked=True,
         linewidth=0.0,
@@ -831,7 +840,11 @@ def plot_generation_and_comsumption_pattern(
     _ = ax.set_ylabel(ylabel)
     if not title:
         title = "Dispatch situation"
-    _ = plt.title(f"{title} from {start_time_step} to {end_time_step}")
+    if single_hour:
+        title_addendum = f" for {start_time_step}"
+    else:
+        title_addendum = f" from {start_time_step} to {end_time_step}"
+    _ = plt.title(f"{title}{title_addendum}")
     _ = plt.legend(bbox_to_anchor=[1.02, 1.05])
     _ = plt.xticks(rotation=90)
     _ = plt.margins(0)
