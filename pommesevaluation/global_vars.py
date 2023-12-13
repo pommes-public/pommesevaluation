@@ -1,3 +1,10 @@
+"""Determine commonly used global variables:
+
+Define color codes and renaming
+
+@author Johannes Kochems
+"""
+
 FUELS = {
     "biomass": "#15b01a",
     "uranium": "#e50000",
@@ -35,5 +42,89 @@ FUELS_RENAMED = {
         "otherfossil": "other conventionals",
         "waste": "waste",
         "oil": "oil",
+    },
+}
+
+
+RES = {
+    "DE_source_solarPV": "#fcb001",
+    "DE_source_windonshore": "#82cafc",
+    "DE_source_windoffshore": "#0504aa",
+    "DE_source_biomassEEG": "#15b01a",
+    "DE_source_ROR": "#c79fef",
+    "other RES": "#757575",
+    "DE_source_landfillgas": "#06c2ac",
+    "DE_source_geothermal": "#ff474c",
+    "DE_source_minegas": "#650021",
+    "DE_source_larga": "#ad8150",
+}
+
+RES_TO_GROUP = {
+    "other RES": [
+        "DE_source_landfillgas",
+        "DE_source_geothermal",
+        "DE_source_minegas",
+        "DE_source_larga",
+    ]
+}
+
+
+RES_RENAMED = {
+    "German": {
+        "DE_source_solarPV": "Solarenergie",
+        "DE_source_windoffshore": "Wind offshore",
+        "DE_source_windonshore": "Wind onshore",
+        "DE_source_biomassEEG": "Biomasse",
+        "DE_source_ROR": "Laufwasser",
+        "DE_source_landfillgas": "Deponiegas",
+        "DE_source_geothermal": "Geothermie",
+        "DE_source_minegas": "Grubengas",
+        "DE_source_larga": "Klärgas",
+        "other RES": "andere Erneuerbare",
+    },
+    "English": {
+        "DE_source_solarPV": "solar PV",
+        "DE_source_windoffshore": "wind offshore",
+        "DE_source_windonshore": "wind onshore",
+        "DE_source_biomassEEG": "biomass",
+        "DE_source_ROR": "run of river",
+        "DE_source_landfillgas": "landfillgas",
+        "DE_source_geothermal": "geothermal",
+        "DE_source_minegas": "minegas",
+        "DE_source_larga": "sewage gas",
+        "other RES": "other RES",
+    },
+}
+
+STORAGES = {
+    "PHS": "#0c2aac",
+    "battery": "#f7e09a",
+}
+
+STORAGES_RENAMED = {
+    "German": {
+        "PHS": "Pumpspeicher",
+        "battery": "Batterien",
+    },
+    "English": {
+        "PHS": "pumped hydro",
+        "battery": "battery",
+    },
+}
+
+
+STORAGES_NEW = {
+    "PHS_new_built": "#7c90e7",
+    "battery_new_built": "#fff5d5",
+}
+
+STORAGES_NEW_RENAMED = {
+    "German": {
+        "PHS_new_built": "Pumpspeicher",
+        "battery_new_built": "Batterien",
+    },
+    "English": {
+        "PHS_new_built": "pumped hydro",
+        "battery_new_built": "battery",
     },
 }
