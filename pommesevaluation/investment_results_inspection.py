@@ -100,6 +100,17 @@ def preprocess_raw_results(results_raw, investments=True, multi_header=False):
         "from",
     ] = processed_results["to"]
 
+    # Adjust label for uncontrolled EV charging
+    processed_results.loc[
+        (processed_results["from"].str.contains("DE_bus_el"))
+        & (
+            processed_results["to"].str.contains(
+                "transformer_ev_uc"
+            )
+        ),
+        "from",
+    ] = processed_results["to"]
+
     # Adjust links to foreign market areas
     processed_results.loc[
         (processed_results["from"].str.contains("DE_bus_el"))
