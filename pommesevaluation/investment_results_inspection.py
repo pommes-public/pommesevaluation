@@ -103,11 +103,7 @@ def preprocess_raw_results(results_raw, investments=True, multi_header=False):
     # Adjust label for uncontrolled EV charging
     processed_results.loc[
         (processed_results["from"].str.contains("DE_bus_el"))
-        & (
-            processed_results["to"].str.contains(
-                "transformer_ev_uc"
-            )
-        ),
+        & (processed_results["to"].str.contains("transformer_ev_uc")),
         "from",
     ] = processed_results["to"]
 
@@ -820,7 +816,9 @@ def plot_generation_and_comsumption_pattern(
 
     fig, ax = plt.subplots(figsize=figsize)
     df_neg, df_pos = data.clip(upper=0), data.clip(lower=0)
-    _ = df_pos.plot(kind=kind, ax=ax, stacked=True, linewidth=0.0, color=colors)
+    _ = df_pos.plot(
+        kind=kind, ax=ax, stacked=True, linewidth=0.0, color=colors
+    )
     _ = ax.set_prop_cycle(None)
     _ = df_neg.rename(columns=lambda x: "_" + x).plot(
         kind=kind,
