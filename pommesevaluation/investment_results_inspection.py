@@ -395,7 +395,11 @@ def plot_single_investment_variable(
     _ = plt.tight_layout()
 
     if save:
-        _ = plt.savefig(f"{path_plots}{filename}_{dr_scenario}.png", dpi=300)
+        _ = plt.savefig(
+            f"{path_plots}{filename}_{dr_scenario}.png",
+            dpi=300,
+            bbox_inches="tight",
+        )
         plot_data.T.to_csv(f"{path_data_out}{filename}_{dr_scenario}.csv")
 
     _ = plt.show()
@@ -599,7 +603,9 @@ def create_single_plot(
             _ = plt.legend(handles, labels, bbox_to_anchor=bbox_params)
 
     if hide_axis:
-        _ = ax.get_xaxis().set_visible(False)
+        # _ = ax.get_xaxis().set_visible(False)  # show nothing
+        _ = ax.set_xticklabels([])
+        _ = ax.set_xlabel("")
     else:
         if draw_xlabel:
             _ = plt.xlabel(x_label[language], labelpad=10)
@@ -625,7 +631,7 @@ def plot_single_investment_variable_for_all_cases(
     aggregation="energy_carrier",
     storage=False,
     group=True,
-    dr_color_codes={},
+    dr_color_codes=None,
     save=False,
     filename="results",
     path_plots="./plots/",
@@ -634,7 +640,14 @@ def plot_single_investment_variable_for_all_cases(
     format_axis=True,
     draw_ylabel=False,
     include_common_xlabel=True,
-    figwidth=12,
+    fig_width=13,
+    subplot_height=3,
+    place_legend_below=True,
+    bbox_params=(0.5, -0.45),
+    ncol=4,
+    language="German",
+    include_common_legend=True,
+    fig_position=0.12,
 ):
     """Plot investment variable; create subplots to compare among scenarios
 
@@ -662,7 +675,7 @@ def plot_single_investment_variable_for_all_cases(
         If True, group data by given aggregation type (default);
         else plot data as it has been given
 
-    dr_color_codes : dict
+    dr_color_codes : dict or None
         Dict of demand response color codes
 
     save : bool
@@ -692,9 +705,25 @@ def plot_single_investment_variable_for_all_cases(
     include_common_xlabel : boolean
         If True, draw a common xlabel
 
-    figwidth : int
+    fig_width : int
         Width of figure
+
+    subplot_height : int
+        height of a subplot
+
+    place_legend_below : boolean
+        If True, plot legend under plot, else right next to it
+
+    bbox_params : tuple or list
+        Define bbox_to_anchor content (for legend placed below)
+
+    ncol : int
+        Control the number of columns for the legend labels
+
+    language : str
+        Language to use (one of "German" and "English")
     """
+    x_label = {"German": "Jahr", "English": "year"}
     ylabels = {
         "German": {
             "invest": "neu installierte Kapazität",
@@ -717,7 +746,9 @@ def plot_single_investment_variable_for_all_cases(
     }
 
     fig, axs = plt.subplots(
-        len(results_dict), 1, figsize=(figwidth, 3 * len(results_dict))
+        len(results_dict),
+        1,
+        figsize=(fig_width, subplot_height * len(results_dict)),
     )
     hide_axis = True
     for number, item in enumerate(results_dict.items()):
@@ -751,6 +782,10 @@ def plot_single_investment_variable_for_all_cases(
             format_axis=format_axis,
             draw_xlabel=False,
             draw_ylabel=draw_ylabel,
+            place_legend_below=place_legend_below,
+            bbox_params=bbox_params,
+            ncol=ncol,
+            language=language,
         )
 
     # Use common axes across plot
@@ -766,11 +801,22 @@ def plot_single_investment_variable_for_all_cases(
     else:
         xaxis_label_pos = 0.53
     if include_common_xlabel:
-        fig.text(xaxis_label_pos, -0.01, "year", ha="center")
+        if include_common_legend:
+            fig.text(xaxis_label_pos, fig_position, x_label[language], ha="center")
+        else:
+            fig.text(xaxis_label_pos, -0.01, x_label[language], ha="center")
+    if include_common_legend:
+        _ = plt.legend(
+            loc="upper center",
+            bbox_to_anchor=bbox_params,
+            fancybox=True,
+            shadow=False,
+            ncol=ncol,
+        )
     fig.text(
         -0.01,
         0.52,
-        f"{ylabels[variable_name]} in MW",
+        f"{ylabels[language][variable_name]} in MW",
         va="center",
         rotation="vertical",
     )
@@ -778,7 +824,11 @@ def plot_single_investment_variable_for_all_cases(
     _ = plt.tight_layout()
 
     if save:
-        _ = plt.savefig(f"{path_plots}{filename}_all_scenarios.png", dpi=300)
+        _ = plt.savefig(
+            f"{path_plots}{filename}_all_scenarios.png",
+            dpi=300,
+            bbox_inches="tight",
+        )
 
     _ = plt.show()
     plt.close()
