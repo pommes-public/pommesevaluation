@@ -126,6 +126,36 @@ STORAGES_NEW_RENAMED = {
     },
 }
 
+STORAGES_OTHER = {
+    **{f"{stor}_outflow": STORAGES[stor] for stor in STORAGES},
+    **{f"{stor}_capacity": STORAGES[stor] for stor in STORAGES},
+}
+STORAGES_OTHER_RENAMED = {
+    "German": {
+        **{
+            f"{stor}_outflow": STORAGES_RENAMED["German"][stor]
+            + " - Ausspeisung"
+            for stor in STORAGES
+        },
+        **{
+            f"{stor}_capacity": STORAGES_RENAMED["German"][stor]
+            + " - Kapazität"
+            for stor in STORAGES
+        },
+    },
+    "English": {
+        **{
+            f"{stor}_outflow": STORAGES_RENAMED["English"][stor] + " - outflow"
+            for stor in STORAGES
+        },
+        **{
+            f"{stor}_capacity": STORAGES_RENAMED["English"][stor]
+            + " - capacity"
+            for stor in STORAGES
+        },
+    },
+}
+
 DEMAND_RESPONSE = {
     "hoho_cluster_shift_only": "#111111",
     "hoho_cluster_shift_shed": "#444444",
@@ -154,5 +184,12 @@ DEMAND_RESPONSE_RENAMED = {
         "ind_cluster_shift_shed": "industry - shifting & shedding",
         "tcs+hoho_cluster_shift_only": "tcs & households - shifting",
         "tcs_cluster_shift_only": "tcs - shifting",
-    }
+    },
+}
+
+ELECTROLYZER = {"hydrogen_electrolyzer": "#F0F6FB"}
+
+ELECTROLYZER_RENAMED = {
+    "German": {"hydrogen_electrolyzer": "Elektrolyseur"},
+    "English": {"hydrogen_electrolyzer": "electrolyzer"},
 }

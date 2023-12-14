@@ -9,6 +9,11 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.ticker import FuncFormatter
 
+from pommesevaluation.global_vars import (
+    STORAGES_RENAMED,
+    STORAGES_OTHER_RENAMED,
+)
+
 
 def preprocess_raw_results(results_raw, investments=True, multi_header=False):
     """Preprocess raw investment results - both, investments and dispatch
@@ -265,6 +270,7 @@ def aggregate_investment_results(
 def plot_single_investment_variable(
     results,
     variable_name,
+    figsize=(14, 9),
     colors=None,
     aggregation="energy_carrier",
     storage=False,
@@ -277,6 +283,10 @@ def plot_single_investment_variable(
     ylim=None,
     format_axis=True,
     draw_xlabel=True,
+    place_legend_below=True,
+    bbox_params=(0.5, -0.15),
+    ncol=4,
+    language="German",
 ):
     """Plot a single investment-related variable from results data set
 
@@ -327,22 +337,45 @@ def plot_single_investment_variable(
 
     draw_xlabel : boolean
         If True, add xaxis label to plot
+
+    place_legend_below : boolean
+        If True, plot legend under plot, else right next to it
+
+    bbox_params : tuple or list
+        Define bbox_to_anchor content (for legend placed below)
+
+    ncol : int
+        Control the number of columns for the legend labels
+
+    language : str
+        Language to use (one of "German" and "English")
     """
     ylabels = {
-        "invest": "newly invested capacity",
-        "old": "total decommissioned capacity",
-        "old_end": "capacity decommissioned because of lifetime",
-        "old_exo": "capacity decommissioned because after initial age",
-        "total": "total installed capacity",
-        "all": "overall installed capacity",
-        "potential": "potential vs. realised capacity",
+        "German": {
+            "invest": "neu installierte Kapazität",
+            "old": "insgesamt stillgelegte Kapazität",
+            "old_end": "wegen Lebensdauer stillgelegte Kapazität",
+            "old_exo": "unter Berücksichtigung des Anlagenalters stillgelegte Kapazität",  # noqa: E501
+            "total": "insgesamt installierte Kapazität",
+            "all": "insgesamt vorhandene Kapazität",
+            "potential": "Potenzial vs. investierte Kapazität",
+        },
+        "English": {
+            "invest": "newly invested capacity",
+            "old": "total decommissioned capacity",
+            "old_end": "capacity decommissioned because of lifetime",
+            "old_exo": "capacity decommissioned considering initial age",
+            "total": "total installed capacity",
+            "all": "overall installed capacity",
+            "potential": "potential vs. realised capacity",
+        },
     }
     if group:
         plot_data = group_results(results, variable_name, aggregation)
     else:
         plot_data = results.copy()
 
-    fig, ax = plt.subplots(figsize=(12, 5))
+    fig, ax = plt.subplots(figsize=figsize)
     create_single_plot(
         plot_data,
         variable_name,
@@ -353,6 +386,10 @@ def plot_single_investment_variable(
         ylim=ylim,
         format_axis=format_axis,
         draw_xlabel=draw_xlabel,
+        place_legend_below=place_legend_below,
+        bbox_params=bbox_params,
+        ncol=ncol,
+        language=language,
     )
 
     _ = plt.tight_layout()
@@ -457,8 +494,13 @@ def create_single_plot(
     format_axis=True,
     draw_xlabel=True,
     draw_ylabel=True,
+    place_legend_below=True,
+    bbox_params=(0.5, -0.15),
+    ncol=4,
+    language="German",
 ):
     """Create one single investment results plot"""
+    x_label = {"German": "Jahr", "English": "year"}
     if not storage:
         if colors:
             plot_data = plot_data.loc[[col for col in colors]]
@@ -477,13 +519,16 @@ def create_single_plot(
                 _ = plot_data.T.plot(
                     kind="bar", stacked=True, ax=ax, legend=False
                 )
+        handles, labels = ax.get_legend_handles_labels()
 
     else:
+        options = [
+            STORAGES_OTHER_RENAMED[language]["PHS_capacity"],
+            STORAGES_OTHER_RENAMED[language]["battery_capacity"],
+        ]
         ax2 = ax.twinx()
         energy_results = plot_data.loc[
-            plot_data.index.get_level_values(0).isin(
-                ["PHS_capacity", "battery_capacity"]
-            )
+            plot_data.index.get_level_values(0).isin(options)
         ]
         power_results = plot_data.drop(index=energy_results.index)
 
@@ -524,30 +569,49 @@ def create_single_plot(
             _ = energy_results.T.plot(kind="bar", stacked=True, ax=ax)
             _ = power_results.T.plot(kind="bar", stacked=True, ax=ax)
 
+        if draw_xlabel:
+            ax.set_xlabel(x_label[language], labelpad=10)
         if draw_ylabel:
-            _ = ax2.set_ylabel(f"{ylabels[variable_name]} in MWh")
+            _ = ax2.set_ylabel(
+                f"{ylabels[language][variable_name]} in MWh", labelpad=10
+            )
+
+        handles, labels = [], []
+        for ax_object in [ax, ax2]:
+            h, l = ax_object.get_legend_handles_labels()
+            handles.extend(h)
+            labels.extend(l)
 
     if title:
         _ = ax.set_title(title)
     if legend:
-        _ = plt.legend(bbox_to_anchor=[1.1, 1.02])
+        if place_legend_below:
+            _ = plt.legend(
+                handles,
+                labels,
+                loc="upper center",
+                bbox_to_anchor=bbox_params,
+                fancybox=True,
+                shadow=False,
+                ncol=ncol,
+            )
+        else:
+            _ = plt.legend(handles, labels, bbox_to_anchor=bbox_params)
 
     if hide_axis:
         _ = ax.get_xaxis().set_visible(False)
     else:
         if draw_xlabel:
-            _ = plt.xlabel("year")
+            _ = plt.xlabel(x_label[language], labelpad=10)
         else:
             ax.get_xaxis().label.set_visible(False)
         if draw_ylabel:
-            _ = ax.set_ylabel(f"{ylabels[variable_name]} in MW")
+            _ = ax.set_ylabel(
+                f"{ylabels[language][variable_name]} in MW", labelpad=10
+            )
 
     if ylim:
         _ = ax.set_ylim(ylim)
-    # current_values = plt.gca().get_yticks()
-    # _ = plt.gca().set_yticklabels(
-    #     ["{:,.0f}".format(x) for x in current_values]
-    # )
     if format_axis:
         _ = ax.get_yaxis().set_major_formatter(
             FuncFormatter(lambda x, p: format(int(x), ","))
@@ -632,13 +696,24 @@ def plot_single_investment_variable_for_all_cases(
         Width of figure
     """
     ylabels = {
-        "invest": "newly invested capacity",
-        "old": "total decommissioned capacity",
-        "old_end": "capacity decommissioned because of lifetime",
-        "old_exo": "capacity decommissioned because after initial age",
-        "total": "total installed capacity",
-        "all": "overall installed capacity",
-        "potential": "potential vs. realised capacity",
+        "German": {
+            "invest": "neu installierte Kapazität",
+            "old": "insgesamt stillgelegte Kapazität",
+            "old_end": "wegen Lebensdauer stillgelegte Kapazität",
+            "old_exo": "unter Berücksichtigung des Anlagenalters stillgelegte Kapazität",
+            "total": "insgesamt installierte Kapazität",
+            "all": "insgesamt vorhandene Kapazität",
+            "potential": "Potenzial vs. investierte Kapazität",
+        },
+        "English": {
+            "invest": "newly invested capacity",
+            "old": "total decommissioned capacity",
+            "old_end": "capacity decommissioned because of lifetime",
+            "old_exo": "capacity decommissioned considering initial age",
+            "total": "total installed capacity",
+            "all": "overall installed capacity",
+            "potential": "potential vs. realised capacity",
+        },
     }
 
     fig, axs = plt.subplots(
@@ -683,7 +758,7 @@ def plot_single_investment_variable_for_all_cases(
         fig.text(
             1.01,
             0.52,
-            f"{ylabels[variable_name]} in MWh",
+            f"{ylabels[language][variable_name]} in MWh",
             va="center",
             rotation="vertical",
         )
