@@ -714,16 +714,20 @@ def plot_single_dispatch_pattern(
     start_time_step,
     amount_of_time_steps,
     colors,
+    title,
     save=True,
     path_plots="./plots/",
     filename="dispatch_pattern",
     kind="area",
     stacked=None,
     figsize=(15, 10),
-    title=None,
     ylabel=None,
     linestyle=None,
     return_plot=False,
+    place_legend_below=True,
+    ncol=4,
+    bbox_params=(0.5, -0.45),
+    language="German",
 ):
     """Plot a single dispatch pattern for a given start and end time stamp
 
@@ -744,6 +748,9 @@ def plot_single_dispatch_pattern(
     save : bool
         Indicates whether to save the plot
 
+    title : str
+        String to display in plot title
+
     path_plots : str
         Path to use for storing the plot
 
@@ -759,9 +766,6 @@ def plot_single_dispatch_pattern(
     figsize : tuple of int
         Size of plot
 
-    title : str
-        String to display in plot title
-
     ylabel : str
         String to use for labelling y label
 
@@ -770,41 +774,70 @@ def plot_single_dispatch_pattern(
 
     return_plot : boolean
         If True, return plot before showing / saving
+
+    place_legend_below : boolean
+        If True, plot legend under plot, else right next to it
+
+    ncol : int
+        Control the number of columns for the legend labels
+
+    bbox_params : tuple or list
+        Define bbox_to_anchor content (for legend placed below)
+
+    language : str
+        Language for plot labels (one of "German" and "English")
     """
     index_start = int(dispatch_pattern.index.get_loc(start_time_step))
     index_end = int(index_start + amount_of_time_steps)
     end_time_step = dispatch_pattern.iloc[index_end].name
 
+    to_plot = dispatch_pattern.iloc[index_start : index_end + 1]
+    plot_labels = {
+        "German": {
+            "x_label": "Zeit",
+            "y_label": "Energie in MWh/h",
+            "title": f"{title} von {start_time_step} bis {end_time_step}",
+        },
+        "English": {
+            "x_label": "time",
+            "y_label": "energy in MWh/h",
+            "title": f"{title} from {start_time_step} to {end_time_step}",
+        },
+    }
+
     fig, ax = plt.subplots(figsize=figsize)
     if kind == "bar" and stacked:
-        _ = dispatch_pattern.iloc[index_start : index_end + 1].plot(
-            ax=ax, kind=kind, color=colors, stacked=stacked
-        )
+        _ = to_plot.plot(ax=ax, kind=kind, color=colors, stacked=stacked)
     elif linestyle:
-        for col in dispatch_pattern.columns:
-            _ = (
-                dispatch_pattern[col]
-                .iloc[index_start : index_end + 1]
-                .plot(
-                    ax=ax,
-                    kind=kind,
-                    color=colors[col],
-                    linestyle=linestyle[col],
-                )
+        for col in to_plot.columns:
+            _ = to_plot[col].plot(
+                ax=ax,
+                kind=kind,
+                color=colors[col],
+                linestyle=linestyle[col],
             )
     else:
-        _ = dispatch_pattern.iloc[index_start : index_end + 1].plot(
-            ax=ax, kind=kind, color=colors
-        )
-    _ = ax.set_xlabel("Time")
+        _ = to_plot.plot(ax=ax, kind=kind, color=colors)
+    _ = ax.set_xlabel(plot_labels[language]["x_label"], labelpad=10)
     if not ylabel:
-        ylabel = "Energy [MWh/h]"
-    _ = ax.set_ylabel(ylabel)
-    if not title:
-        title = "Dispatch situation"
-    _ = plt.title(f"{title} from {start_time_step} to {end_time_step}")
-    _ = plt.legend(bbox_to_anchor=[1.02, 1.05])
-    _ = plt.xticks(rotation=90)
+        ylabel = plot_labels[language]["y_label"]
+    _ = ax.set_ylabel(ylabel, labelpad=10)
+    _ = plt.title(plot_labels[language]["title"])
+    if place_legend_below:
+        _ = plt.legend(
+            loc="upper center",
+            bbox_to_anchor=bbox_params,
+            fancybox=True,
+            shadow=False,
+            ncol=ncol,
+        )
+    else:
+        _ = plt.legend(bbox_to_anchor=[1.02, 1.05])
+
+    _ = ax.set_xticks(range(0, len(to_plot.index), 12))
+    _ = ax.set_xticklabels(
+        [label[:16] for label in to_plot.index[::12]], rotation=90, ha="center"
+    )
     _ = plt.margins(0, 0.05)
     if return_plot:
         if save:
@@ -819,10 +852,7 @@ def plot_single_dispatch_pattern(
         )
         file_name_out = file_name_out.replace(":", "-").replace(" ", "_")
         file_name_out.replace(":", "-")
-        _ = plt.savefig(
-            file_name_out,
-            dpi=300,
-        )
+        _ = plt.savefig(file_name_out, dpi=300, bbox_inches="tight")
 
     _ = plt.show()
     plt.close()
@@ -837,6 +867,9 @@ def add_area_to_existing_plot(
     save=True,
     path_plots="./plots/",
     filename="area_plot",
+    place_legend_below=True,
+    ncol=4,
+    bbox_params=(0.5, -0.45),
 ):
     """Add a stacked area to plot
 
@@ -866,24 +899,43 @@ def add_area_to_existing_plot(
     filename : str
         File name to use for the plot
 
+    place_legend_below : boolean
+        If True, plot legend under plot, else right next to it
+
+    ncol : int
+        Control the number of columns for the legend labels
+
+    bbox_params : tuple or list
+        Define bbox_to_anchor content (for legend placed below)
     """
     index_start = int(data.index.get_loc(start_time_step))
     index_end = int(index_start + amount_of_time_steps)
     end_time_step = data.iloc[index_end].name
 
-    _ = (
-        data.rename(columns=lambda x: "_" + x)
-        .iloc[index_start : index_end + 1]
-        .plot(
-            kind="area",
-            color={"_" + x: color for x, color in colors.items()},
-            alpha=0.3,
-            ax=ax,
-            legend=False,
-        )
+    to_plot = data.rename(columns=lambda x: "_" + x).iloc[
+        index_start : index_end + 1
+    ]
+    _ = to_plot.plot(
+        kind="area",
+        color={"_" + x: color for x, color in colors.items()},
+        alpha=0.3,
+        ax=ax,
+        legend=False,
     )
-    _ = plt.xticks(rotation=90)
-    _ = plt.legend(bbox_to_anchor=[1.02, 1.05])
+    _ = ax.set_xticks(range(0, len(to_plot.index), 12))
+    _ = ax.set_xticklabels(
+        [label[:16] for label in to_plot.index[::12]], rotation=90, ha="center"
+    )
+    if place_legend_below:
+        _ = plt.legend(
+            loc="upper center",
+            bbox_to_anchor=bbox_params,
+            fancybox=True,
+            shadow=False,
+            ncol=ncol,
+        )
+    else:
+        _ = plt.legend(bbox_to_anchor=[1.02, 1.05])
     _ = plt.tight_layout()
 
     if save:
@@ -892,10 +944,7 @@ def add_area_to_existing_plot(
         )
         file_name_out = file_name_out.replace(":", "-").replace(" ", "_")
         file_name_out.replace(":", "-")
-        _ = plt.savefig(
-            file_name_out,
-            dpi=300,
-        )
+        _ = plt.savefig(file_name_out, dpi=300, bbox_inches="tight")
 
     _ = plt.show()
     plt.close()

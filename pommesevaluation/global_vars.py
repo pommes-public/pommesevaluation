@@ -45,7 +45,6 @@ FUELS_RENAMED = {
     },
 }
 
-
 RES = {
     "DE_source_solarPV": "#fcb001",
     "DE_source_windonshore": "#82cafc",
@@ -67,7 +66,6 @@ RES_TO_GROUP = {
         "DE_source_larga",
     ]
 }
-
 
 RES_RENAMED = {
     "German": {
@@ -112,7 +110,6 @@ STORAGES_RENAMED = {
     },
 }
 
-
 STORAGES_NEW = {
     "PHS_new_built": "#7c90e7",
     "battery_new_built": "#fff5d5",
@@ -127,4 +124,35 @@ STORAGES_NEW_RENAMED = {
         "PHS_new_built": "pumped hydro",
         "battery_new_built": "battery",
     },
+}
+
+DEMAND_RESPONSE = {
+    "hoho_cluster_shift_only": "#111111",
+    "hoho_cluster_shift_shed": "#444444",
+    "ind_cluster_shed_only": "#666666",
+    "ind_cluster_shift_only": "#aaaaaa",
+    "ind_cluster_shift_shed": "#cccccc",
+    "tcs+hoho_cluster_shift_only": "#dddddd",
+    "tcs_cluster_shift_only": "#eeeeee",
+}
+
+DEMAND_RESPONSE_RENAMED = {
+    "German": {
+        "hoho_cluster_shift_only": "Haushalte - Verschiebung",
+        "hoho_cluster_shift_shed": "Haushalte - Verschiebung & Verzicht",
+        "ind_cluster_shed_only": "Industrie - Verzicht",
+        "ind_cluster_shift_only": "Industrie - Verschiebung",
+        "ind_cluster_shift_shed": "Industrie - Verschiebung & Verzicht",
+        "tcs+hoho_cluster_shift_only": "GHD & Haushalte - Verschiebung",
+        "tcs_cluster_shift_only": "GHD - Verschiebung",
+    },
+    "English": {
+        "hoho_cluster_shift_only": "households - shifting",
+        "hoho_cluster_shift_shed": "households - shifting & shedding",
+        "ind_cluster_shed_only": "industry - shedding",
+        "ind_cluster_shift_only": "industry - shifting",
+        "ind_cluster_shift_shed": "industry - shifting & shedding",
+        "tcs+hoho_cluster_shift_only": "tcs & households - shifting",
+        "tcs_cluster_shift_only": "tcs - shifting",
+    }
 }
