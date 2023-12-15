@@ -1174,7 +1174,7 @@ def plot_generation_and_comsumption_pattern(
     _ = plt.xticks(rotation=90)
     _ = plt.margins(0)
     _ = plt.tight_layout()
-    _ = plt.show()
+
     if save:
         file_name_out = (
             f"{path_plots}{filename}_{start_time_step}-{end_time_step}.png"
@@ -1186,6 +1186,7 @@ def plot_generation_and_comsumption_pattern(
             dpi=300,
         )
 
+    _ = plt.show()
     plt.close()
 
 
