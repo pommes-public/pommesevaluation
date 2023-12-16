@@ -647,7 +647,7 @@ def plot_single_investment_variable_for_all_cases(
     ncol=4,
     language="German",
     include_common_legend=True,
-    fig_position=0.12,
+    fig_position=0.13,
 ):
     """Plot investment variable; create subplots to compare among scenarios
 
@@ -722,6 +722,12 @@ def plot_single_investment_variable_for_all_cases(
 
     language : str
         Language to use (one of "German" and "English")
+
+    include_common_legend : boolean
+        If True, include a common x and y legend
+
+    fig_position : float
+        Location for x label
     """
     x_label = {"German": "Jahr", "English": "year"}
     ylabels = {
@@ -792,17 +798,17 @@ def plot_single_investment_variable_for_all_cases(
     if storage:
         fig.text(
             1.01,
-            0.52,
+            0.55,
             f"{ylabels[language][variable_name]} in MWh",
             va="center",
             rotation="vertical",
         )
-        xaxis_label_pos = 0.5
-    else:
-        xaxis_label_pos = 0.53
+    xaxis_label_pos = 0.5
     if include_common_xlabel:
         if include_common_legend:
-            fig.text(xaxis_label_pos, fig_position, x_label[language], ha="center")
+            fig.text(
+                xaxis_label_pos, fig_position, x_label[language], ha="center"
+            )
         else:
             fig.text(xaxis_label_pos, -0.01, x_label[language], ha="center")
     if include_common_legend:
@@ -815,7 +821,7 @@ def plot_single_investment_variable_for_all_cases(
         )
     fig.text(
         -0.01,
-        0.52,
+        0.55,
         f"{ylabels[language][variable_name]} in MW",
         va="center",
         rotation="vertical",
@@ -853,6 +859,8 @@ def plot_single_dispatch_pattern(
     ncol=4,
     bbox_params=(0.5, -0.45),
     language="German",
+    xtick_frequency=12,
+    format_axis=True,
 ):
     """Plot a single dispatch pattern for a given start and end time stamp
 
@@ -911,6 +919,12 @@ def plot_single_dispatch_pattern(
 
     language : str
         Language for plot labels (one of "German" and "English")
+
+    xtick_frequency : int
+        Determine frequency of x ticks (12: plot every 12th x tick)
+
+    format_axis : boolean
+        If True, format thousands in y axis
     """
     index_start = int(dispatch_pattern.index.get_loc(start_time_step))
     index_end = int(index_start + amount_of_time_steps)
@@ -959,15 +973,22 @@ def plot_single_dispatch_pattern(
     else:
         _ = plt.legend(bbox_to_anchor=[1.02, 1.05])
 
-    _ = ax.set_xticks(range(0, len(to_plot.index), 12))
+    _ = ax.set_xticks(range(0, len(to_plot.index), xtick_frequency))
     _ = ax.set_xticklabels(
-        [label[:16] for label in to_plot.index[::12]], rotation=90, ha="center"
+        [label[:16] for label in to_plot.index[::xtick_frequency]],
+        rotation=90,
+        ha="center",
     )
     _ = plt.margins(0, 0.05)
     if return_plot:
         if save:
             print("Did not save, but return plot.")
         return fig, ax
+
+    if format_axis:
+        _ = ax.get_yaxis().set_major_formatter(
+            FuncFormatter(lambda x, p: format(int(x), ","))
+        )
 
     _ = plt.tight_layout()
 

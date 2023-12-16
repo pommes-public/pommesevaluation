@@ -126,6 +126,10 @@ STORAGES_NEW_RENAMED = {
     },
 }
 
+STORAGES_TO_GROUP = {
+    "PHS": ["PHS", "PHS_new_built"]
+}
+
 STORAGES_OTHER = {
     **{f"{stor}_outflow": STORAGES[stor] for stor in STORAGES},
     **{f"{stor}_capacity": STORAGES[stor] for stor in STORAGES},
@@ -192,4 +196,49 @@ ELECTROLYZER = {"hydrogen_electrolyzer": "#F0F6FB"}
 ELECTROLYZER_RENAMED = {
     "German": {"hydrogen_electrolyzer": "Elektrolyseur"},
     "English": {"hydrogen_electrolyzer": "electrolyzer"},
+}
+
+LOAD = {"DE_sink_el_load": "darkblue"}
+
+LOAD_RENAMED = {
+    "German": {"DE_sink_el_load": "inflexible Restlast"},
+    "English": {"DE_sink_el_load": "inflexible remaining load"},
+}
+
+EVS = {
+    "storage_ev_cc_bidirectional_inflow": "#7E7B2D",
+    "storage_ev_cc_unidirectional_inflow": "#989336",
+    "transformer_ev_cc_bidirectional_feedback": "#B1AC3F",
+    "transformer_ev_uc": "#D8D59F",
+}
+
+EVS_RENAMED = {
+    "German": {
+        "storage_ev_cc_bidirectional_inflow": "E-Pkw bidirektionales Laden",
+        "storage_ev_cc_unidirectional_inflow": "E-Pkw unidirektionales Laden",
+        "transformer_ev_cc_bidirectional_feedback": "E-Pkw Rückspeisung",
+        "transformer_ev_uc": "E-Pkw ungesteuertes Laden",
+    },
+    "English": {
+        "storage_ev_cc_bidirectional_inflow": "E cars bidirectional charging",
+        "storage_ev_cc_unidirectional_inflow": "E cars unidirectional charging",
+        "transformer_ev_cc_bidirectional_feedback": "E cars grid feed-in",
+        "transformer_ev_uc": "E cars uncontrolled charging",
+    },
+}
+
+SHORTAGE_EXCESS = {
+    "DE_sink_el_excess": "purple",
+    "DE_source_el_shortage": "red",
+}
+
+SHORTAGE_EXCESS_RENAMED = {
+    "German": {
+        "DE_sink_el_excess": "EE-Abregelung",
+        "DE_source_el_shortage": "unfreiwilliger Lastabwurf",
+    },
+    "English": {
+        "DE_sink_el_excess": "RES curtailment",
+        "DE_source_el_shortage": "unvoluntary shedding",
+    },
 }
