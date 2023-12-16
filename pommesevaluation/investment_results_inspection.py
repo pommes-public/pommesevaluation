@@ -1262,6 +1262,7 @@ def plot_generation_and_comsumption_pattern(
         _ = plt.savefig(
             file_name_out,
             dpi=300,
+            bbox_inches="tight"
         )
 
     _ = plt.show()
