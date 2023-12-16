@@ -1101,14 +1101,20 @@ def plot_generation_and_comsumption_pattern(
     start_time_step,
     amount_of_time_steps,
     colors,
+    title,
     figsize=(15, 10),
     kind="area",
-    title=None,
     ylabel=None,
     save=True,
     single_hour=False,
     path_plots="./plots/",
     filename="dispatch_pattern",
+    place_legend_below=True,
+    ncol=4,
+    bbox_params=(0.5, -0.25),
+    language="German",
+    xtick_frequency=12,
+    format_axis=True,
 ):
     """Plot combined generation and consumption pattern as stacked are chart
 
@@ -1133,14 +1139,14 @@ def plot_generation_and_comsumption_pattern(
     colors : dict
         Colors to use for the plot
 
+    title : str
+        String to display in plot title
+
     figsize : tuple of int
         Size of plot
 
     kind : str
         Kind of plot to generate (area or bar)
-
-    title : str
-        String to display in plot title
 
     ylabel : str
         String to use for labelling y label
@@ -1156,11 +1162,43 @@ def plot_generation_and_comsumption_pattern(
 
     filename : str
         File name to use for the plot
+
+    place_legend_below : boolean
+        If True, plot legend under plot, else right next to it
+
+    ncol : int
+        Control the number of columns for the legend labels
+
+    bbox_params : tuple or list
+        Define bbox_to_anchor content (for legend placed below)
+
+    language : str
+        Language for plot labels (one of "German" and "English")
+
+    xtick_frequency : int
+        Determine frequency of x ticks (12: plot every 12th x tick)
+
+    format_axis : boolean
+        If True, format thousands in y axis
     """
     index_start = int(data.index.get_loc(start_time_step))
     index_end = int(index_start + amount_of_time_steps)
     end_time_step = data.iloc[index_end].name
     data = data.iloc[index_start : index_end + 1]
+    plot_labels = {
+        "German": {
+            "x_label": "Zeit",
+            "y_label": "Energie in MWh/h",
+            "title_span": f"{title} von {start_time_step} bis {end_time_step}",
+            "title_step": f"{title} für {start_time_step}",
+        },
+        "English": {
+            "x_label": "time",
+            "y_label": "energy in MWh/h",
+            "title_span": f"{title} from {start_time_step} to {end_time_step}",
+            "title_step": f"{title} for {start_time_step}",
+        },
+    }
 
     fig, ax = plt.subplots(figsize=figsize)
     df_neg, df_pos = data.clip(upper=0), data.clip(lower=0)
@@ -1179,21 +1217,40 @@ def plot_generation_and_comsumption_pattern(
         [df_neg.sum(axis=1).min() * 1.05, df_pos.sum(axis=1).max() * 1.05]
     )
     _ = plt.legend(bbox_to_anchor=[1.01, 1.01])
-    _ = plt.xticks(rotation=90)
-    _ = ax.set_xlabel("Time")
+    _ = ax.set_xticks(range(0, len(data.index), xtick_frequency))
+    _ = ax.set_xticklabels(
+        [label[:16] for label in data.index[::xtick_frequency]],
+        rotation=90,
+        ha="center",
+    )
+    _ = ax.set_xlabel(plot_labels[language]["x_label"], labelpad=10)
     if not ylabel:
-        ylabel = "Energy [MWh/h]"
-    _ = ax.set_ylabel(ylabel)
-    if not title:
-        title = "Dispatch situation"
+        ylabel = plot_labels[language]["y_label"]
+    _ = ax.set_ylabel(ylabel, labelpad=10)
     if single_hour:
-        title_addendum = f" for {start_time_step}"
+        title = plot_labels[language]["title_step"]
     else:
-        title_addendum = f" from {start_time_step} to {end_time_step}"
-    _ = plt.title(f"{title}{title_addendum}")
-    _ = plt.legend(bbox_to_anchor=[1.02, 1.05])
+        title = plot_labels[language]["title_span"]
+    _ = plt.title(title)
     _ = plt.xticks(rotation=90)
     _ = plt.margins(0)
+
+    if place_legend_below:
+        _ = plt.legend(
+            loc="upper center",
+            bbox_to_anchor=bbox_params,
+            fancybox=True,
+            shadow=False,
+            ncol=ncol,
+        )
+    else:
+        _ = plt.legend(bbox_to_anchor=bbox_params)
+
+    if format_axis:
+        _ = ax.get_yaxis().set_major_formatter(
+            FuncFormatter(lambda x, p: format(int(x), ","))
+        )
+
     _ = plt.tight_layout()
 
     if save:

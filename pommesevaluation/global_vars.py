@@ -126,9 +126,7 @@ STORAGES_NEW_RENAMED = {
     },
 }
 
-STORAGES_TO_GROUP = {
-    "PHS": ["PHS", "PHS_new_built"]
-}
+STORAGES_TO_GROUP = {"PHS": ["PHS", "PHS_new_built"]}
 
 STORAGES_OTHER = {
     **{f"{stor}_outflow": STORAGES[stor] for stor in STORAGES},
@@ -241,4 +239,11 @@ SHORTAGE_EXCESS_RENAMED = {
         "DE_sink_el_excess": "RES curtailment",
         "DE_source_el_shortage": "unvoluntary shedding",
     },
+}
+
+IMPORT_EXPORT = {"import/export": "#666666"}
+
+IMPORT_EXPORT_RENAMED = {
+    "German": {"import/export": "Import / Export"},
+    "English": {"import/export": "import / export"},
 }
