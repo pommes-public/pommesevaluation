@@ -287,6 +287,7 @@ def plot_single_investment_variable(
     bbox_params=(0.5, -0.15),
     ncol=4,
     language="German",
+    exclude_unit=False,
 ):
     """Plot a single investment-related variable from results data set
 
@@ -298,6 +299,9 @@ def plot_single_investment_variable(
     variable_name : str
         Particular variable to plot;
         one of ['invest', 'old', 'old_end', 'old_exo', 'total', 'all']
+
+    figsize: tuple or list
+        Size of the figure to be plotted
 
     colors : dict or None
         Colors to use if given
@@ -349,6 +353,9 @@ def plot_single_investment_variable(
 
     language : str
         Language to use (one of "German" and "English")
+
+    exclude_unit : boolean
+        If True, exclude the default unit (MW)
     """
     ylabels = {
         "German": {
@@ -359,6 +366,7 @@ def plot_single_investment_variable(
             "total": "insgesamt installierte Kapazität",
             "all": "insgesamt vorhandene Kapazität",
             "potential": "Potenzial vs. investierte Kapazität",
+            "generation": "Stromerzeugung in GWh/a",
         },
         "English": {
             "invest": "newly invested capacity",
@@ -368,6 +376,7 @@ def plot_single_investment_variable(
             "total": "total installed capacity",
             "all": "overall installed capacity",
             "potential": "potential vs. realised capacity",
+            "generation": "power generation in GWh/a",
         },
     }
     if group:
@@ -390,6 +399,7 @@ def plot_single_investment_variable(
         bbox_params=bbox_params,
         ncol=ncol,
         language=language,
+        exclude_unit=exclude_unit,
     )
 
     _ = plt.tight_layout()
@@ -502,12 +512,15 @@ def create_single_plot(
     bbox_params=(0.5, -0.15),
     ncol=4,
     language="German",
+    exclude_unit=False,
 ):
     """Create one single investment results plot"""
     x_label = {"German": "Jahr", "English": "year"}
     if not storage:
         if colors:
-            plot_data = plot_data.loc[[col for col in colors]]
+            plot_data = plot_data.loc[
+                [col for col in colors if col in plot_data.index]
+            ]
             if legend:
                 _ = plot_data.T.plot(
                     kind="bar", stacked=True, ax=ax, color=colors
@@ -612,9 +625,14 @@ def create_single_plot(
         else:
             ax.get_xaxis().label.set_visible(False)
         if draw_ylabel:
-            _ = ax.set_ylabel(
-                f"{ylabels[language][variable_name]} in MW", labelpad=10
-            )
+            if exclude_unit:
+                _ = ax.set_ylabel(
+                    f"{ylabels[language][variable_name]}", labelpad=10
+                )
+            else:
+                _ = ax.set_ylabel(
+                    f"{ylabels[language][variable_name]} in MW", labelpad=10
+                )
 
     if ylim:
         _ = ax.set_ylim(ylim)
@@ -648,6 +666,7 @@ def plot_single_investment_variable_for_all_cases(
     language="German",
     include_common_legend=True,
     fig_position=0.13,
+    exclude_unit=False,
 ):
     """Plot investment variable; create subplots to compare among scenarios
 
@@ -696,9 +715,6 @@ def plot_single_investment_variable_for_all_cases(
     format_axis : boolean
         If True, format the yaxis to int values
 
-    draw_xlabel : boolean
-        If True, add xaxis label to plot
-
     draw_ylabel : boolean
         If True, add ylabel to last subplot
 
@@ -728,6 +744,9 @@ def plot_single_investment_variable_for_all_cases(
 
     fig_position : float
         Location for x label
+
+    exclude_unit : boolean
+        If True, exclude the default unit (MW)
     """
     x_label = {"German": "Jahr", "English": "year"}
     ylabels = {
@@ -792,6 +811,7 @@ def plot_single_investment_variable_for_all_cases(
             bbox_params=bbox_params,
             ncol=ncol,
             language=language,
+            exclude_unit=exclude_unit,
         )
 
     # Use common axes across plot
@@ -1259,11 +1279,7 @@ def plot_generation_and_comsumption_pattern(
         )
         file_name_out = file_name_out.replace(":", "-").replace(" ", "_")
         file_name_out.replace(":", "-")
-        _ = plt.savefig(
-            file_name_out,
-            dpi=300,
-            bbox_inches="tight"
-        )
+        _ = plt.savefig(file_name_out, dpi=300, bbox_inches="tight")
 
     _ = plt.show()
     plt.close()
