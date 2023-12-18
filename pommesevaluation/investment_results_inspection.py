@@ -9,6 +9,11 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.ticker import FuncFormatter
 
+from pommesevaluation.global_vars import (
+    STORAGES_RENAMED,
+    STORAGES_OTHER_RENAMED,
+)
+
 
 def preprocess_raw_results(results_raw, investments=True, multi_header=False):
     """Preprocess raw investment results - both, investments and dispatch
@@ -265,6 +270,7 @@ def aggregate_investment_results(
 def plot_single_investment_variable(
     results,
     variable_name,
+    figsize=(14, 9),
     colors=None,
     aggregation="energy_carrier",
     storage=False,
@@ -277,6 +283,11 @@ def plot_single_investment_variable(
     ylim=None,
     format_axis=True,
     draw_xlabel=True,
+    place_legend_below=True,
+    bbox_params=(0.5, -0.15),
+    ncol=4,
+    language="German",
+    exclude_unit=False,
 ):
     """Plot a single investment-related variable from results data set
 
@@ -288,6 +299,9 @@ def plot_single_investment_variable(
     variable_name : str
         Particular variable to plot;
         one of ['invest', 'old', 'old_end', 'old_exo', 'total', 'all']
+
+    figsize: tuple or list
+        Size of the figure to be plotted
 
     colors : dict or None
         Colors to use if given
@@ -327,22 +341,50 @@ def plot_single_investment_variable(
 
     draw_xlabel : boolean
         If True, add xaxis label to plot
+
+    place_legend_below : boolean
+        If True, plot legend under plot, else right next to it
+
+    bbox_params : tuple or list
+        Define bbox_to_anchor content (for legend placed below)
+
+    ncol : int
+        Control the number of columns for the legend labels
+
+    language : str
+        Language to use (one of "German" and "English")
+
+    exclude_unit : boolean
+        If True, exclude the default unit (MW)
     """
     ylabels = {
-        "invest": "newly invested capacity",
-        "old": "total decommissioned capacity",
-        "old_end": "capacity decommissioned because of lifetime",
-        "old_exo": "capacity decommissioned because after initial age",
-        "total": "total installed capacity",
-        "all": "overall installed capacity",
-        "potential": "potential vs. realised capacity",
+        "German": {
+            "invest": "neu installierte Kapazität",
+            "old": "insgesamt stillgelegte Kapazität",
+            "old_end": "wegen Lebensdauer stillgelegte Kapazität",
+            "old_exo": "unter Berücksichtigung des Anlagenalters stillgelegte Kapazität",  # noqa: E501
+            "total": "insgesamt installierte Kapazität",
+            "all": "insgesamt vorhandene Kapazität",
+            "potential": "Potenzial vs. investierte Kapazität",
+            "generation": "Stromerzeugung in GWh/a",
+        },
+        "English": {
+            "invest": "newly invested capacity",
+            "old": "total decommissioned capacity",
+            "old_end": "capacity decommissioned because of lifetime",
+            "old_exo": "capacity decommissioned considering initial age",
+            "total": "total installed capacity",
+            "all": "overall installed capacity",
+            "potential": "potential vs. realised capacity",
+            "generation": "power generation in GWh/a",
+        },
     }
     if group:
         plot_data = group_results(results, variable_name, aggregation)
     else:
         plot_data = results.copy()
 
-    fig, ax = plt.subplots(figsize=(12, 5))
+    fig, ax = plt.subplots(figsize=figsize)
     create_single_plot(
         plot_data,
         variable_name,
@@ -353,12 +395,21 @@ def plot_single_investment_variable(
         ylim=ylim,
         format_axis=format_axis,
         draw_xlabel=draw_xlabel,
+        place_legend_below=place_legend_below,
+        bbox_params=bbox_params,
+        ncol=ncol,
+        language=language,
+        exclude_unit=exclude_unit,
     )
 
     _ = plt.tight_layout()
 
     if save:
-        _ = plt.savefig(f"{path_plots}{filename}_{dr_scenario}.png", dpi=300)
+        _ = plt.savefig(
+            f"{path_plots}{filename}_{dr_scenario}.png",
+            dpi=300,
+            bbox_inches="tight",
+        )
         plot_data.T.to_csv(f"{path_data_out}{filename}_{dr_scenario}.csv")
 
     _ = plt.show()
@@ -457,11 +508,19 @@ def create_single_plot(
     format_axis=True,
     draw_xlabel=True,
     draw_ylabel=True,
+    place_legend_below=True,
+    bbox_params=(0.5, -0.15),
+    ncol=4,
+    language="German",
+    exclude_unit=False,
 ):
     """Create one single investment results plot"""
+    x_label = {"German": "Jahr", "English": "year"}
     if not storage:
         if colors:
-            plot_data = plot_data.loc[[col for col in colors]]
+            plot_data = plot_data.loc[
+                [col for col in colors if col in plot_data.index]
+            ]
             if legend:
                 _ = plot_data.T.plot(
                     kind="bar", stacked=True, ax=ax, color=colors
@@ -477,13 +536,16 @@ def create_single_plot(
                 _ = plot_data.T.plot(
                     kind="bar", stacked=True, ax=ax, legend=False
                 )
+        handles, labels = ax.get_legend_handles_labels()
 
     else:
+        options = [
+            STORAGES_OTHER_RENAMED[language]["PHS_capacity"],
+            STORAGES_OTHER_RENAMED[language]["battery_capacity"],
+        ]
         ax2 = ax.twinx()
         energy_results = plot_data.loc[
-            plot_data.index.get_level_values(0).isin(
-                ["PHS_capacity", "battery_capacity"]
-            )
+            plot_data.index.get_level_values(0).isin(options)
         ]
         power_results = plot_data.drop(index=energy_results.index)
 
@@ -524,30 +586,56 @@ def create_single_plot(
             _ = energy_results.T.plot(kind="bar", stacked=True, ax=ax)
             _ = power_results.T.plot(kind="bar", stacked=True, ax=ax)
 
+        if draw_xlabel:
+            ax.set_xlabel(x_label[language], labelpad=10)
         if draw_ylabel:
-            _ = ax2.set_ylabel(f"{ylabels[variable_name]} in MWh")
+            _ = ax2.set_ylabel(
+                f"{ylabels[language][variable_name]} in MWh", labelpad=10
+            )
+
+        handles, labels = [], []
+        for ax_object in [ax, ax2]:
+            h, l = ax_object.get_legend_handles_labels()
+            handles.extend(h)
+            labels.extend(l)
 
     if title:
         _ = ax.set_title(title)
     if legend:
-        _ = plt.legend(bbox_to_anchor=[1.1, 1.02])
+        if place_legend_below:
+            _ = plt.legend(
+                handles,
+                labels,
+                loc="upper center",
+                bbox_to_anchor=bbox_params,
+                fancybox=True,
+                shadow=False,
+                ncol=ncol,
+            )
+        else:
+            _ = plt.legend(handles, labels, bbox_to_anchor=bbox_params)
 
     if hide_axis:
-        _ = ax.get_xaxis().set_visible(False)
+        # _ = ax.get_xaxis().set_visible(False)  # show nothing
+        _ = ax.set_xticklabels([])
+        _ = ax.set_xlabel("")
     else:
         if draw_xlabel:
-            _ = plt.xlabel("year")
+            _ = plt.xlabel(x_label[language], labelpad=10)
         else:
             ax.get_xaxis().label.set_visible(False)
         if draw_ylabel:
-            _ = ax.set_ylabel(f"{ylabels[variable_name]} in MW")
+            if exclude_unit:
+                _ = ax.set_ylabel(
+                    f"{ylabels[language][variable_name]}", labelpad=10
+                )
+            else:
+                _ = ax.set_ylabel(
+                    f"{ylabels[language][variable_name]} in MW", labelpad=10
+                )
 
     if ylim:
         _ = ax.set_ylim(ylim)
-    # current_values = plt.gca().get_yticks()
-    # _ = plt.gca().set_yticklabels(
-    #     ["{:,.0f}".format(x) for x in current_values]
-    # )
     if format_axis:
         _ = ax.get_yaxis().set_major_formatter(
             FuncFormatter(lambda x, p: format(int(x), ","))
@@ -561,7 +649,7 @@ def plot_single_investment_variable_for_all_cases(
     aggregation="energy_carrier",
     storage=False,
     group=True,
-    dr_color_codes={},
+    dr_color_codes=None,
     save=False,
     filename="results",
     path_plots="./plots/",
@@ -570,7 +658,15 @@ def plot_single_investment_variable_for_all_cases(
     format_axis=True,
     draw_ylabel=False,
     include_common_xlabel=True,
-    figwidth=12,
+    fig_width=13,
+    subplot_height=3,
+    place_legend_below=True,
+    bbox_params=(0.5, -0.45),
+    ncol=4,
+    language="German",
+    include_common_legend=True,
+    fig_position=0.13,
+    exclude_unit=False,
 ):
     """Plot investment variable; create subplots to compare among scenarios
 
@@ -598,7 +694,7 @@ def plot_single_investment_variable_for_all_cases(
         If True, group data by given aggregation type (default);
         else plot data as it has been given
 
-    dr_color_codes : dict
+    dr_color_codes : dict or None
         Dict of demand response color codes
 
     save : bool
@@ -619,30 +715,65 @@ def plot_single_investment_variable_for_all_cases(
     format_axis : boolean
         If True, format the yaxis to int values
 
-    draw_xlabel : boolean
-        If True, add xaxis label to plot
-
     draw_ylabel : boolean
         If True, add ylabel to last subplot
 
     include_common_xlabel : boolean
         If True, draw a common xlabel
 
-    figwidth : int
+    fig_width : int
         Width of figure
+
+    subplot_height : int
+        height of a subplot
+
+    place_legend_below : boolean
+        If True, plot legend under plot, else right next to it
+
+    bbox_params : tuple or list
+        Define bbox_to_anchor content (for legend placed below)
+
+    ncol : int
+        Control the number of columns for the legend labels
+
+    language : str
+        Language to use (one of "German" and "English")
+
+    include_common_legend : boolean
+        If True, include a common x and y legend
+
+    fig_position : float
+        Location for x label
+
+    exclude_unit : boolean
+        If True, exclude the default unit (MW)
     """
+    x_label = {"German": "Jahr", "English": "year"}
     ylabels = {
-        "invest": "newly invested capacity",
-        "old": "total decommissioned capacity",
-        "old_end": "capacity decommissioned because of lifetime",
-        "old_exo": "capacity decommissioned because after initial age",
-        "total": "total installed capacity",
-        "all": "overall installed capacity",
-        "potential": "potential vs. realised capacity",
+        "German": {
+            "invest": "neu installierte Kapazität",
+            "old": "insgesamt stillgelegte Kapazität",
+            "old_end": "wegen Lebensdauer stillgelegte Kapazität",
+            "old_exo": "unter Berücksichtigung des Anlagenalters stillgelegte Kapazität",
+            "total": "insgesamt installierte Kapazität",
+            "all": "insgesamt vorhandene Kapazität",
+            "potential": "Potenzial vs. investierte Kapazität",
+        },
+        "English": {
+            "invest": "newly invested capacity",
+            "old": "total decommissioned capacity",
+            "old_end": "capacity decommissioned because of lifetime",
+            "old_exo": "capacity decommissioned considering initial age",
+            "total": "total installed capacity",
+            "all": "overall installed capacity",
+            "potential": "potential vs. realised capacity",
+        },
     }
 
     fig, axs = plt.subplots(
-        len(results_dict), 1, figsize=(figwidth, 3 * len(results_dict))
+        len(results_dict),
+        1,
+        figsize=(fig_width, subplot_height * len(results_dict)),
     )
     hide_axis = True
     for number, item in enumerate(results_dict.items()):
@@ -676,26 +807,42 @@ def plot_single_investment_variable_for_all_cases(
             format_axis=format_axis,
             draw_xlabel=False,
             draw_ylabel=draw_ylabel,
+            place_legend_below=place_legend_below,
+            bbox_params=bbox_params,
+            ncol=ncol,
+            language=language,
+            exclude_unit=exclude_unit,
         )
 
     # Use common axes across plot
     if storage:
         fig.text(
             1.01,
-            0.52,
-            f"{ylabels[variable_name]} in MWh",
+            0.55,
+            f"{ylabels[language][variable_name]} in MWh",
             va="center",
             rotation="vertical",
         )
-        xaxis_label_pos = 0.5
-    else:
-        xaxis_label_pos = 0.53
+    xaxis_label_pos = 0.5
     if include_common_xlabel:
-        fig.text(xaxis_label_pos, -0.01, "year", ha="center")
+        if include_common_legend:
+            fig.text(
+                xaxis_label_pos, fig_position, x_label[language], ha="center"
+            )
+        else:
+            fig.text(xaxis_label_pos, -0.01, x_label[language], ha="center")
+    if include_common_legend:
+        _ = plt.legend(
+            loc="upper center",
+            bbox_to_anchor=bbox_params,
+            fancybox=True,
+            shadow=False,
+            ncol=ncol,
+        )
     fig.text(
         -0.01,
-        0.52,
-        f"{ylabels[variable_name]} in MW",
+        0.55,
+        f"{ylabels[language][variable_name]} in MW",
         va="center",
         rotation="vertical",
     )
@@ -703,7 +850,11 @@ def plot_single_investment_variable_for_all_cases(
     _ = plt.tight_layout()
 
     if save:
-        _ = plt.savefig(f"{path_plots}{filename}_all_scenarios.png", dpi=300)
+        _ = plt.savefig(
+            f"{path_plots}{filename}_all_scenarios.png",
+            dpi=300,
+            bbox_inches="tight",
+        )
 
     _ = plt.show()
     plt.close()
@@ -714,16 +865,22 @@ def plot_single_dispatch_pattern(
     start_time_step,
     amount_of_time_steps,
     colors,
+    title,
     save=True,
     path_plots="./plots/",
     filename="dispatch_pattern",
     kind="area",
     stacked=None,
     figsize=(15, 10),
-    title=None,
     ylabel=None,
     linestyle=None,
     return_plot=False,
+    place_legend_below=True,
+    ncol=4,
+    bbox_params=(0.5, -0.45),
+    language="German",
+    xtick_frequency=12,
+    format_axis=True,
 ):
     """Plot a single dispatch pattern for a given start and end time stamp
 
@@ -744,6 +901,9 @@ def plot_single_dispatch_pattern(
     save : bool
         Indicates whether to save the plot
 
+    title : str
+        String to display in plot title
+
     path_plots : str
         Path to use for storing the plot
 
@@ -759,9 +919,6 @@ def plot_single_dispatch_pattern(
     figsize : tuple of int
         Size of plot
 
-    title : str
-        String to display in plot title
-
     ylabel : str
         String to use for labelling y label
 
@@ -770,46 +927,88 @@ def plot_single_dispatch_pattern(
 
     return_plot : boolean
         If True, return plot before showing / saving
+
+    place_legend_below : boolean
+        If True, plot legend under plot, else right next to it
+
+    ncol : int
+        Control the number of columns for the legend labels
+
+    bbox_params : tuple or list
+        Define bbox_to_anchor content (for legend placed below)
+
+    language : str
+        Language for plot labels (one of "German" and "English")
+
+    xtick_frequency : int
+        Determine frequency of x ticks (12: plot every 12th x tick)
+
+    format_axis : boolean
+        If True, format thousands in y axis
     """
     index_start = int(dispatch_pattern.index.get_loc(start_time_step))
     index_end = int(index_start + amount_of_time_steps)
     end_time_step = dispatch_pattern.iloc[index_end].name
 
+    to_plot = dispatch_pattern.iloc[index_start : index_end + 1]
+    plot_labels = {
+        "German": {
+            "x_label": "Zeit",
+            "y_label": "Energie in MWh/h",
+            "title": f"{title} von {start_time_step} bis {end_time_step}",
+        },
+        "English": {
+            "x_label": "time",
+            "y_label": "energy in MWh/h",
+            "title": f"{title} from {start_time_step} to {end_time_step}",
+        },
+    }
+
     fig, ax = plt.subplots(figsize=figsize)
     if kind == "bar" and stacked:
-        _ = dispatch_pattern.iloc[index_start : index_end + 1].plot(
-            ax=ax, kind=kind, color=colors, stacked=stacked
-        )
+        _ = to_plot.plot(ax=ax, kind=kind, color=colors, stacked=stacked)
     elif linestyle:
-        for col in dispatch_pattern.columns:
-            _ = (
-                dispatch_pattern[col]
-                .iloc[index_start : index_end + 1]
-                .plot(
-                    ax=ax,
-                    kind=kind,
-                    color=colors[col],
-                    linestyle=linestyle[col],
-                )
+        for col in to_plot.columns:
+            _ = to_plot[col].plot(
+                ax=ax,
+                kind=kind,
+                color=colors[col],
+                linestyle=linestyle[col],
             )
     else:
-        _ = dispatch_pattern.iloc[index_start : index_end + 1].plot(
-            ax=ax, kind=kind, color=colors
-        )
-    _ = ax.set_xlabel("Time")
+        _ = to_plot.plot(ax=ax, kind=kind, color=colors)
+    _ = ax.set_xlabel(plot_labels[language]["x_label"], labelpad=10)
     if not ylabel:
-        ylabel = "Energy [MWh/h]"
-    _ = ax.set_ylabel(ylabel)
-    if not title:
-        title = "Dispatch situation"
-    _ = plt.title(f"{title} from {start_time_step} to {end_time_step}")
-    _ = plt.legend(bbox_to_anchor=[1.02, 1.05])
-    _ = plt.xticks(rotation=90)
+        ylabel = plot_labels[language]["y_label"]
+    _ = ax.set_ylabel(ylabel, labelpad=10)
+    _ = plt.title(plot_labels[language]["title"])
+    if place_legend_below:
+        _ = plt.legend(
+            loc="upper center",
+            bbox_to_anchor=bbox_params,
+            fancybox=True,
+            shadow=False,
+            ncol=ncol,
+        )
+    else:
+        _ = plt.legend(bbox_to_anchor=[1.02, 1.05])
+
+    _ = ax.set_xticks(range(0, len(to_plot.index), xtick_frequency))
+    _ = ax.set_xticklabels(
+        [label[:16] for label in to_plot.index[::xtick_frequency]],
+        rotation=90,
+        ha="center",
+    )
     _ = plt.margins(0, 0.05)
     if return_plot:
         if save:
             print("Did not save, but return plot.")
         return fig, ax
+
+    if format_axis:
+        _ = ax.get_yaxis().set_major_formatter(
+            FuncFormatter(lambda x, p: format(int(x), ","))
+        )
 
     _ = plt.tight_layout()
 
@@ -819,10 +1018,7 @@ def plot_single_dispatch_pattern(
         )
         file_name_out = file_name_out.replace(":", "-").replace(" ", "_")
         file_name_out.replace(":", "-")
-        _ = plt.savefig(
-            file_name_out,
-            dpi=300,
-        )
+        _ = plt.savefig(file_name_out, dpi=300, bbox_inches="tight")
 
     _ = plt.show()
     plt.close()
@@ -837,6 +1033,9 @@ def add_area_to_existing_plot(
     save=True,
     path_plots="./plots/",
     filename="area_plot",
+    place_legend_below=True,
+    ncol=4,
+    bbox_params=(0.5, -0.45),
 ):
     """Add a stacked area to plot
 
@@ -866,24 +1065,43 @@ def add_area_to_existing_plot(
     filename : str
         File name to use for the plot
 
+    place_legend_below : boolean
+        If True, plot legend under plot, else right next to it
+
+    ncol : int
+        Control the number of columns for the legend labels
+
+    bbox_params : tuple or list
+        Define bbox_to_anchor content (for legend placed below)
     """
     index_start = int(data.index.get_loc(start_time_step))
     index_end = int(index_start + amount_of_time_steps)
     end_time_step = data.iloc[index_end].name
 
-    _ = (
-        data.rename(columns=lambda x: "_" + x)
-        .iloc[index_start : index_end + 1]
-        .plot(
-            kind="area",
-            color={"_" + x: color for x, color in colors.items()},
-            alpha=0.3,
-            ax=ax,
-            legend=False,
-        )
+    to_plot = data.rename(columns=lambda x: "_" + x).iloc[
+        index_start : index_end + 1
+    ]
+    _ = to_plot.plot(
+        kind="area",
+        color={"_" + x: color for x, color in colors.items()},
+        alpha=0.3,
+        ax=ax,
+        legend=False,
     )
-    _ = plt.xticks(rotation=90)
-    _ = plt.legend(bbox_to_anchor=[1.02, 1.05])
+    _ = ax.set_xticks(range(0, len(to_plot.index), 12))
+    _ = ax.set_xticklabels(
+        [label[:16] for label in to_plot.index[::12]], rotation=90, ha="center"
+    )
+    if place_legend_below:
+        _ = plt.legend(
+            loc="upper center",
+            bbox_to_anchor=bbox_params,
+            fancybox=True,
+            shadow=False,
+            ncol=ncol,
+        )
+    else:
+        _ = plt.legend(bbox_to_anchor=[1.02, 1.05])
     _ = plt.tight_layout()
 
     if save:
@@ -892,10 +1110,7 @@ def add_area_to_existing_plot(
         )
         file_name_out = file_name_out.replace(":", "-").replace(" ", "_")
         file_name_out.replace(":", "-")
-        _ = plt.savefig(
-            file_name_out,
-            dpi=300,
-        )
+        _ = plt.savefig(file_name_out, dpi=300, bbox_inches="tight")
 
     _ = plt.show()
     plt.close()
@@ -906,14 +1121,20 @@ def plot_generation_and_comsumption_pattern(
     start_time_step,
     amount_of_time_steps,
     colors,
+    title,
     figsize=(15, 10),
     kind="area",
-    title=None,
     ylabel=None,
     save=True,
     single_hour=False,
     path_plots="./plots/",
     filename="dispatch_pattern",
+    place_legend_below=True,
+    ncol=4,
+    bbox_params=(0.5, -0.25),
+    language="German",
+    xtick_frequency=12,
+    format_axis=True,
 ):
     """Plot combined generation and consumption pattern as stacked are chart
 
@@ -938,14 +1159,14 @@ def plot_generation_and_comsumption_pattern(
     colors : dict
         Colors to use for the plot
 
+    title : str
+        String to display in plot title
+
     figsize : tuple of int
         Size of plot
 
     kind : str
         Kind of plot to generate (area or bar)
-
-    title : str
-        String to display in plot title
 
     ylabel : str
         String to use for labelling y label
@@ -961,11 +1182,43 @@ def plot_generation_and_comsumption_pattern(
 
     filename : str
         File name to use for the plot
+
+    place_legend_below : boolean
+        If True, plot legend under plot, else right next to it
+
+    ncol : int
+        Control the number of columns for the legend labels
+
+    bbox_params : tuple or list
+        Define bbox_to_anchor content (for legend placed below)
+
+    language : str
+        Language for plot labels (one of "German" and "English")
+
+    xtick_frequency : int
+        Determine frequency of x ticks (12: plot every 12th x tick)
+
+    format_axis : boolean
+        If True, format thousands in y axis
     """
     index_start = int(data.index.get_loc(start_time_step))
     index_end = int(index_start + amount_of_time_steps)
     end_time_step = data.iloc[index_end].name
     data = data.iloc[index_start : index_end + 1]
+    plot_labels = {
+        "German": {
+            "x_label": "Zeit",
+            "y_label": "Energie in MWh/h",
+            "title_span": f"{title} von {start_time_step} bis {end_time_step}",
+            "title_step": f"{title} für {start_time_step}",
+        },
+        "English": {
+            "x_label": "time",
+            "y_label": "energy in MWh/h",
+            "title_span": f"{title} from {start_time_step} to {end_time_step}",
+            "title_step": f"{title} for {start_time_step}",
+        },
+    }
 
     fig, ax = plt.subplots(figsize=figsize)
     df_neg, df_pos = data.clip(upper=0), data.clip(lower=0)
@@ -984,34 +1237,51 @@ def plot_generation_and_comsumption_pattern(
         [df_neg.sum(axis=1).min() * 1.05, df_pos.sum(axis=1).max() * 1.05]
     )
     _ = plt.legend(bbox_to_anchor=[1.01, 1.01])
-    _ = plt.xticks(rotation=90)
-    _ = ax.set_xlabel("Time")
+    _ = ax.set_xticks(range(0, len(data.index), xtick_frequency))
+    _ = ax.set_xticklabels(
+        [label[:16] for label in data.index[::xtick_frequency]],
+        rotation=90,
+        ha="center",
+    )
+    _ = ax.set_xlabel(plot_labels[language]["x_label"], labelpad=10)
     if not ylabel:
-        ylabel = "Energy [MWh/h]"
-    _ = ax.set_ylabel(ylabel)
-    if not title:
-        title = "Dispatch situation"
+        ylabel = plot_labels[language]["y_label"]
+    _ = ax.set_ylabel(ylabel, labelpad=10)
     if single_hour:
-        title_addendum = f" for {start_time_step}"
+        title = plot_labels[language]["title_step"]
     else:
-        title_addendum = f" from {start_time_step} to {end_time_step}"
-    _ = plt.title(f"{title}{title_addendum}")
-    _ = plt.legend(bbox_to_anchor=[1.02, 1.05])
+        title = plot_labels[language]["title_span"]
+    _ = plt.title(title)
     _ = plt.xticks(rotation=90)
     _ = plt.margins(0)
+
+    if place_legend_below:
+        _ = plt.legend(
+            loc="upper center",
+            bbox_to_anchor=bbox_params,
+            fancybox=True,
+            shadow=False,
+            ncol=ncol,
+        )
+    else:
+        _ = plt.legend(bbox_to_anchor=bbox_params)
+
+    if format_axis:
+        _ = ax.get_yaxis().set_major_formatter(
+            FuncFormatter(lambda x, p: format(int(x), ","))
+        )
+
     _ = plt.tight_layout()
-    _ = plt.show()
+
     if save:
         file_name_out = (
             f"{path_plots}{filename}_{start_time_step}-{end_time_step}.png"
         )
         file_name_out = file_name_out.replace(":", "-").replace(" ", "_")
         file_name_out.replace(":", "-")
-        _ = plt.savefig(
-            file_name_out,
-            dpi=300,
-        )
+        _ = plt.savefig(file_name_out, dpi=300, bbox_inches="tight")
 
+    _ = plt.show()
     plt.close()
 
 
