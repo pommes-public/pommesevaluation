@@ -881,6 +881,7 @@ def plot_single_dispatch_pattern(
     language="German",
     xtick_frequency=12,
     format_axis=True,
+    dr_scenario=None,
 ):
     """Plot a single dispatch pattern for a given start and end time stamp
 
@@ -945,6 +946,9 @@ def plot_single_dispatch_pattern(
 
     format_axis : boolean
         If True, format thousands in y axis
+
+    dr_scenario : str
+        Demand response scenario considered
     """
     index_start = int(dispatch_pattern.index.get_loc(start_time_step))
     index_end = int(index_start + amount_of_time_steps)
@@ -1014,7 +1018,8 @@ def plot_single_dispatch_pattern(
 
     if save:
         file_name_out = (
-            f"{path_plots}{filename}_{start_time_step}-{end_time_step}.png"
+            f"{path_plots}{filename}_{dr_scenario}_"
+            f"{start_time_step}-{end_time_step}.png"
         )
         file_name_out = file_name_out.replace(":", "-").replace(" ", "_")
         file_name_out.replace(":", "-")
@@ -1135,6 +1140,7 @@ def plot_generation_and_comsumption_pattern(
     language="German",
     xtick_frequency=12,
     format_axis=True,
+    dr_scenario=None,
 ):
     """Plot combined generation and consumption pattern as stacked are chart
 
@@ -1200,6 +1206,9 @@ def plot_generation_and_comsumption_pattern(
 
     format_axis : boolean
         If True, format thousands in y axis
+
+    dr_scenario: str
+        Demand response scenario considered
     """
     index_start = int(data.index.get_loc(start_time_step))
     index_end = int(index_start + amount_of_time_steps)
@@ -1275,7 +1284,8 @@ def plot_generation_and_comsumption_pattern(
 
     if save:
         file_name_out = (
-            f"{path_plots}{filename}_{start_time_step}-{end_time_step}.png"
+            f"{path_plots}{filename}_{dr_scenario}_"
+            f"{start_time_step}-{end_time_step}.png"
         )
         file_name_out = file_name_out.replace(":", "-").replace(" ", "_")
         file_name_out.replace(":", "-")
