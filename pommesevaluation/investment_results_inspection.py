@@ -882,6 +882,7 @@ def plot_single_dispatch_pattern(
     xtick_frequency=12,
     format_axis=True,
     dr_scenario=None,
+    hide_legend_and_xlabel=False,
 ):
     """Plot a single dispatch pattern for a given start and end time stamp
 
@@ -949,6 +950,9 @@ def plot_single_dispatch_pattern(
 
     dr_scenario : str
         Demand response scenario considered
+
+    hide_legend_and_xlabel : boolean
+        Don't show legend and x label if True
     """
     index_start = int(dispatch_pattern.index.get_loc(start_time_step))
     index_end = int(index_start + amount_of_time_steps)
@@ -970,7 +974,9 @@ def plot_single_dispatch_pattern(
 
     fig, ax = plt.subplots(figsize=figsize)
     if kind == "bar" and stacked:
-        _ = to_plot.plot(ax=ax, kind=kind, color=colors, stacked=stacked)
+        _ = to_plot.plot(
+            ax=ax, kind=kind, color=colors, stacked=stacked, legend=False
+        )
     elif linestyle:
         for col in to_plot.columns:
             _ = to_plot[col].plot(
@@ -978,24 +984,27 @@ def plot_single_dispatch_pattern(
                 kind=kind,
                 color=colors[col],
                 linestyle=linestyle[col],
+                legend=False,
             )
     else:
-        _ = to_plot.plot(ax=ax, kind=kind, color=colors)
-    _ = ax.set_xlabel(plot_labels[language]["x_label"], labelpad=10)
+        _ = to_plot.plot(ax=ax, kind=kind, color=colors, legend=False)
+    if not hide_legend_and_xlabel:
+        _ = ax.set_xlabel(plot_labels[language]["x_label"], labelpad=10)
     if not ylabel:
         ylabel = plot_labels[language]["y_label"]
     _ = ax.set_ylabel(ylabel, labelpad=10)
     _ = plt.title(plot_labels[language]["title"])
-    if place_legend_below:
-        _ = plt.legend(
-            loc="upper center",
-            bbox_to_anchor=bbox_params,
-            fancybox=True,
-            shadow=False,
-            ncol=ncol,
-        )
-    else:
-        _ = plt.legend(bbox_to_anchor=[1.02, 1.05])
+    if not hide_legend_and_xlabel:
+        if place_legend_below:
+            _ = plt.legend(
+                loc="upper center",
+                bbox_to_anchor=bbox_params,
+                fancybox=True,
+                shadow=False,
+                ncol=ncol,
+            )
+        else:
+            _ = plt.legend(bbox_to_anchor=[1.02, 1.05])
 
     _ = ax.set_xticks(range(0, len(to_plot.index), xtick_frequency))
     _ = ax.set_xticklabels(
@@ -1141,6 +1150,7 @@ def plot_generation_and_comsumption_pattern(
     xtick_frequency=12,
     format_axis=True,
     dr_scenario=None,
+    hide_legend_and_xlabel=False,
 ):
     """Plot combined generation and consumption pattern as stacked are chart
 
@@ -1209,6 +1219,9 @@ def plot_generation_and_comsumption_pattern(
 
     dr_scenario: str
         Demand response scenario considered
+
+    hide_legend_and_xlabel : boolean
+        Don't show legend and x label if True
     """
     index_start = int(data.index.get_loc(start_time_step))
     index_end = int(index_start + amount_of_time_steps)
@@ -1232,7 +1245,12 @@ def plot_generation_and_comsumption_pattern(
     fig, ax = plt.subplots(figsize=figsize)
     df_neg, df_pos = data.clip(upper=0), data.clip(lower=0)
     _ = df_pos.plot(
-        kind=kind, ax=ax, stacked=True, linewidth=0.0, color=colors
+        kind=kind,
+        ax=ax,
+        stacked=True,
+        linewidth=0.0,
+        color=colors,
+        legend=False,
     )
     _ = ax.set_prop_cycle(None)
     _ = df_neg.rename(columns=lambda x: "_" + x).plot(
@@ -1241,18 +1259,19 @@ def plot_generation_and_comsumption_pattern(
         stacked=True,
         linewidth=0.0,
         color={"_" + k: v for k, v in colors.items()},
+        legend=False,
     )
     _ = ax.set_ylim(
         [df_neg.sum(axis=1).min() * 1.05, df_pos.sum(axis=1).max() * 1.05]
     )
-    _ = plt.legend(bbox_to_anchor=[1.01, 1.01])
     _ = ax.set_xticks(range(0, len(data.index), xtick_frequency))
     _ = ax.set_xticklabels(
         [label[:16] for label in data.index[::xtick_frequency]],
         rotation=90,
         ha="center",
     )
-    _ = ax.set_xlabel(plot_labels[language]["x_label"], labelpad=10)
+    if not hide_legend_and_xlabel:
+        _ = ax.set_xlabel(plot_labels[language]["x_label"], labelpad=10)
     if not ylabel:
         ylabel = plot_labels[language]["y_label"]
     _ = ax.set_ylabel(ylabel, labelpad=10)
@@ -1264,16 +1283,17 @@ def plot_generation_and_comsumption_pattern(
     _ = plt.xticks(rotation=90)
     _ = plt.margins(0)
 
-    if place_legend_below:
-        _ = plt.legend(
-            loc="upper center",
-            bbox_to_anchor=bbox_params,
-            fancybox=True,
-            shadow=False,
-            ncol=ncol,
-        )
-    else:
-        _ = plt.legend(bbox_to_anchor=bbox_params)
+    if not hide_legend_and_xlabel:
+        if place_legend_below:
+            _ = plt.legend(
+                loc="upper center",
+                bbox_to_anchor=bbox_params,
+                fancybox=True,
+                shadow=False,
+                ncol=ncol,
+            )
+        else:
+            _ = plt.legend(bbox_to_anchor=bbox_params)
 
     if format_axis:
         _ = ax.get_yaxis().set_major_formatter(
