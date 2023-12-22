@@ -3,6 +3,7 @@ Routines used for investment results inspection for both, analyses of
 investments taken as well as the resulting dispatch of units resp. clusters.
 """
 import warnings
+from typing import Dict
 
 import numpy as np
 import pandas as pd
@@ -10,7 +11,6 @@ from matplotlib import pyplot as plt
 from matplotlib.ticker import FuncFormatter
 
 from pommesevaluation.global_vars import (
-    STORAGES_RENAMED,
     STORAGES_OTHER_RENAMED,
 )
 
@@ -881,6 +881,8 @@ def plot_single_dispatch_pattern(
     language="German",
     xtick_frequency=12,
     format_axis=True,
+    dr_scenario=None,
+    hide_legend_and_xlabel=False,
 ):
     """Plot a single dispatch pattern for a given start and end time stamp
 
@@ -945,6 +947,12 @@ def plot_single_dispatch_pattern(
 
     format_axis : boolean
         If True, format thousands in y axis
+
+    dr_scenario : str
+        Demand response scenario considered
+
+    hide_legend_and_xlabel : boolean
+        Don't show legend and x label if True
     """
     index_start = int(dispatch_pattern.index.get_loc(start_time_step))
     index_end = int(index_start + amount_of_time_steps)
@@ -966,7 +974,9 @@ def plot_single_dispatch_pattern(
 
     fig, ax = plt.subplots(figsize=figsize)
     if kind == "bar" and stacked:
-        _ = to_plot.plot(ax=ax, kind=kind, color=colors, stacked=stacked)
+        _ = to_plot.plot(
+            ax=ax, kind=kind, color=colors, stacked=stacked, legend=False
+        )
     elif linestyle:
         for col in to_plot.columns:
             _ = to_plot[col].plot(
@@ -974,24 +984,27 @@ def plot_single_dispatch_pattern(
                 kind=kind,
                 color=colors[col],
                 linestyle=linestyle[col],
+                legend=False,
             )
     else:
-        _ = to_plot.plot(ax=ax, kind=kind, color=colors)
-    _ = ax.set_xlabel(plot_labels[language]["x_label"], labelpad=10)
+        _ = to_plot.plot(ax=ax, kind=kind, color=colors, legend=False)
+    if not hide_legend_and_xlabel:
+        _ = ax.set_xlabel(plot_labels[language]["x_label"], labelpad=10)
     if not ylabel:
         ylabel = plot_labels[language]["y_label"]
     _ = ax.set_ylabel(ylabel, labelpad=10)
     _ = plt.title(plot_labels[language]["title"])
-    if place_legend_below:
-        _ = plt.legend(
-            loc="upper center",
-            bbox_to_anchor=bbox_params,
-            fancybox=True,
-            shadow=False,
-            ncol=ncol,
-        )
-    else:
-        _ = plt.legend(bbox_to_anchor=[1.02, 1.05])
+    if not hide_legend_and_xlabel:
+        if place_legend_below:
+            _ = plt.legend(
+                loc="upper center",
+                bbox_to_anchor=bbox_params,
+                fancybox=True,
+                shadow=False,
+                ncol=ncol,
+            )
+        else:
+            _ = plt.legend(bbox_to_anchor=[1.02, 1.05])
 
     _ = ax.set_xticks(range(0, len(to_plot.index), xtick_frequency))
     _ = ax.set_xticklabels(
@@ -1014,7 +1027,8 @@ def plot_single_dispatch_pattern(
 
     if save:
         file_name_out = (
-            f"{path_plots}{filename}_{start_time_step}-{end_time_step}.png"
+            f"{path_plots}{filename}_{dr_scenario}_"
+            f"{start_time_step}-{end_time_step}.png"
         )
         file_name_out = file_name_out.replace(":", "-").replace(" ", "_")
         file_name_out.replace(":", "-")
@@ -1135,6 +1149,8 @@ def plot_generation_and_comsumption_pattern(
     language="German",
     xtick_frequency=12,
     format_axis=True,
+    dr_scenario=None,
+    hide_legend_and_xlabel=False,
 ):
     """Plot combined generation and consumption pattern as stacked are chart
 
@@ -1200,6 +1216,12 @@ def plot_generation_and_comsumption_pattern(
 
     format_axis : boolean
         If True, format thousands in y axis
+
+    dr_scenario: str
+        Demand response scenario considered
+
+    hide_legend_and_xlabel : boolean
+        Don't show legend and x label if True
     """
     index_start = int(data.index.get_loc(start_time_step))
     index_end = int(index_start + amount_of_time_steps)
@@ -1223,7 +1245,12 @@ def plot_generation_and_comsumption_pattern(
     fig, ax = plt.subplots(figsize=figsize)
     df_neg, df_pos = data.clip(upper=0), data.clip(lower=0)
     _ = df_pos.plot(
-        kind=kind, ax=ax, stacked=True, linewidth=0.0, color=colors
+        kind=kind,
+        ax=ax,
+        stacked=True,
+        linewidth=0.0,
+        color=colors,
+        legend=False,
     )
     _ = ax.set_prop_cycle(None)
     _ = df_neg.rename(columns=lambda x: "_" + x).plot(
@@ -1232,18 +1259,19 @@ def plot_generation_and_comsumption_pattern(
         stacked=True,
         linewidth=0.0,
         color={"_" + k: v for k, v in colors.items()},
+        legend=False,
     )
     _ = ax.set_ylim(
         [df_neg.sum(axis=1).min() * 1.05, df_pos.sum(axis=1).max() * 1.05]
     )
-    _ = plt.legend(bbox_to_anchor=[1.01, 1.01])
     _ = ax.set_xticks(range(0, len(data.index), xtick_frequency))
     _ = ax.set_xticklabels(
         [label[:16] for label in data.index[::xtick_frequency]],
         rotation=90,
         ha="center",
     )
-    _ = ax.set_xlabel(plot_labels[language]["x_label"], labelpad=10)
+    if not hide_legend_and_xlabel:
+        _ = ax.set_xlabel(plot_labels[language]["x_label"], labelpad=10)
     if not ylabel:
         ylabel = plot_labels[language]["y_label"]
     _ = ax.set_ylabel(ylabel, labelpad=10)
@@ -1255,16 +1283,17 @@ def plot_generation_and_comsumption_pattern(
     _ = plt.xticks(rotation=90)
     _ = plt.margins(0)
 
-    if place_legend_below:
-        _ = plt.legend(
-            loc="upper center",
-            bbox_to_anchor=bbox_params,
-            fancybox=True,
-            shadow=False,
-            ncol=ncol,
-        )
-    else:
-        _ = plt.legend(bbox_to_anchor=bbox_params)
+    if not hide_legend_and_xlabel:
+        if place_legend_below:
+            _ = plt.legend(
+                loc="upper center",
+                bbox_to_anchor=bbox_params,
+                fancybox=True,
+                shadow=False,
+                ncol=ncol,
+            )
+        else:
+            _ = plt.legend(bbox_to_anchor=bbox_params)
 
     if format_axis:
         _ = ax.get_yaxis().set_major_formatter(
@@ -1275,7 +1304,181 @@ def plot_generation_and_comsumption_pattern(
 
     if save:
         file_name_out = (
-            f"{path_plots}{filename}_{start_time_step}-{end_time_step}.png"
+            f"{path_plots}{filename}_{dr_scenario}_"
+            f"{start_time_step}-{end_time_step}.png"
+        )
+        file_name_out = file_name_out.replace(":", "-").replace(" ", "_")
+        file_name_out.replace(":", "-")
+        _ = plt.savefig(file_name_out, dpi=300, bbox_inches="tight")
+
+    _ = plt.show()
+    plt.close()
+
+
+def plot_generation_and_consumption_for_all_cases(
+    data_dict,
+    start_time_steps,
+    amount_of_time_steps,
+    colors,
+    fig_height=15,
+    subplot_width=4,
+    save=True,
+    path_plots="./plots/",
+    filename="dispatch_pattern",
+    place_legend_below=True,
+    ncol=4,
+    bbox_params=(0.5, -0.25),
+    language="German",
+    wspace=0.5,
+    y_label_pos=(-0.01, 0.55),
+    format_axis=True,
+    dr_scenario=None,
+    hide_legend_and_xlabel=False,
+):
+    """Plot bar plots for exemplary dispatch situation next to each other
+
+    Parameters
+    ----------
+    data_dict : dict of pd.DataFrame
+        Data for plotting (given per case)
+
+    start_time_steps : dict of str
+        First time step of excerpt displayed
+
+    amount_of_time_steps : int or float
+        Number of time steps to be displayed
+
+    colors : dict
+        Colors to use for the plot
+
+    fig_height : int
+        Overall height of the figure
+
+    subplot_width : int
+        Width of subplot element
+
+    save : bool
+        Indicates whether to save the plot
+
+    path_plots : str
+        Path to use for storing the plot
+
+    filename : str
+        File name to use for the plot
+
+    place_legend_below : boolean
+        If True, plot legend under plot, else right next to it
+
+    ncol : int
+        Control the number of columns for the legend labels
+
+    bbox_params : tuple or list
+        Define bbox_to_anchor content (for legend placed below)
+
+    language : str
+        Language for plot labels (one of "German" and "English")
+
+    wspace : float
+        Manually configure spacing between subplots
+
+    y_label_pos : tuple
+        Adjust position of common y axis label
+
+    format_axis : boolean
+        If True, format thousands in y axis
+
+    dr_scenario: str
+        Demand response scenario considered
+
+    hide_legend_and_xlabel : boolean
+        Don't show legend and x label if True
+    """
+    plot_labels = {
+        "German": {
+            "y_label": "Energie in MWh/h",
+        },
+        "English": {
+            "y_label": "energy in MWh/h",
+        },
+    }
+
+    fig, axs = plt.subplots(
+        1,
+        len(data_dict),
+        figsize=(subplot_width * len(data_dict), fig_height),
+        gridspec_kw={"wspace": wspace},
+    )
+    for number, item in enumerate(data_dict.items()):
+        key = item[0]
+        data = item[1]
+
+        index_start = int(data.index.get_loc(start_time_steps[key]))
+        index_end = int(index_start + amount_of_time_steps)
+        data = data.iloc[index_start : index_end + 1]
+
+        df_neg, df_pos = data.clip(upper=0), data.clip(lower=0)
+        _ = df_pos.plot(
+            kind="bar",
+            ax=axs[number],
+            stacked=True,
+            linewidth=0.0,
+            color=colors,
+            legend=False,
+        )
+        _ = axs[number].set_prop_cycle(None)
+        _ = df_neg.rename(columns=lambda x: "_" + x).plot(
+            kind="bar",
+            ax=axs[number],
+            stacked=True,
+            linewidth=0.0,
+            color={"_" + k: v for k, v in colors.items()},
+            legend=False,
+        )
+        _ = axs[number].set_xticklabels(
+            [f"DR {key} -\n{label[:16]}" for label in data.index],
+            rotation=90,
+            ha="center",
+        )
+
+        _ = axs[number].set_ylim(
+            [df_neg.sum(axis=1).min() * 1.05, df_pos.sum(axis=1).max() * 1.05]
+        )
+        _ = plt.margins(0)
+
+        if format_axis:
+            _ = (
+                axs[number]
+                .get_yaxis()
+                .set_major_formatter(
+                    FuncFormatter(lambda x, p: format(int(x), ","))
+                )
+            )
+
+    if not hide_legend_and_xlabel:
+        if place_legend_below:
+            _ = plt.legend(
+                loc="lower center",
+                bbox_to_anchor=bbox_params,
+                fancybox=True,
+                shadow=False,
+                ncol=ncol,
+            )
+        else:
+            _ = plt.legend(bbox_to_anchor=bbox_params)
+
+    fig.text(
+        y_label_pos[0],
+        y_label_pos[1],
+        f"{plot_labels[language]['y_label']}",
+        va="center",
+        rotation="vertical",
+    )
+
+    _ = plt.tight_layout()
+
+    if save:
+        file_name_out = (
+            f"{path_plots}{filename}_scenario_comparison.png"
         )
         file_name_out = file_name_out.replace(":", "-").replace(" ", "_")
         file_name_out.replace(":", "-")
