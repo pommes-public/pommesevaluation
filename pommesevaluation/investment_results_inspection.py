@@ -1332,7 +1332,6 @@ def plot_generation_and_consumption_for_all_cases(
     wspace=0.5,
     y_label_pos=(-0.01, 0.55),
     format_axis=True,
-    dr_scenario=None,
     hide_legend_and_xlabel=False,
 ):
     """Plot bar plots for exemplary dispatch situation next to each other
@@ -1477,9 +1476,7 @@ def plot_generation_and_consumption_for_all_cases(
     _ = plt.tight_layout()
 
     if save:
-        file_name_out = (
-            f"{path_plots}{filename}_scenario_comparison.png"
-        )
+        file_name_out = f"{path_plots}{filename}_scenario_comparison.png"
         file_name_out = file_name_out.replace(":", "-").replace(" ", "_")
         file_name_out.replace(":", "-")
         _ = plt.savefig(file_name_out, dpi=300, bbox_inches="tight")
@@ -1528,6 +1525,64 @@ def create_datetime_index(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def plot_sensitivities():
+def plot_sensitivities(
+    data_dict: Dict,
+    colors: Dict,
+    renamed_sensitivities: Dict or None = None,
+    language: str = "German",
+    figsize: tuple = (18, 5),
+    save: bool = True,
+    path_plots="./plots/",
+    filename="sensitivities",
+    label_used: str = "x_axis",
+):
     """Visualize sensitivities using a simple line plot"""
-    pass
+    fig, axs = plt.subplots(1, 3, figsize=figsize, sharey="row")
+    plot_labels = {
+        "German": {
+            "x_label": "Sensitivität",
+            "y_label": "Leistung in MW",
+        },
+        "English": {
+            "x_label": "sensitivity",
+            "y_label": "capacity in MW",
+        },
+    }
+    for no, (key, val) in enumerate(data_dict.items()):
+        val.plot(ax=axs[no], legend=False, color=colors, marker="s")
+        if label_used == "x_axis":
+            axs[no].set_xlabel(
+                renamed_sensitivities[key][0].rsplit(" ", 1)[0], labelpad=10
+            )
+        elif label_used == "title":
+            axs[no].set_title(key)
+            axs[no].set_xlabel(
+                plot_labels[language]["x_label"], labelpad=10
+            )
+        else:
+            raise ValueError("Invalid label used!")
+        axs[no].set_ylabel(plot_labels[language]["y_label"], labelpad=10)
+        _ = (
+            axs[no]
+            .get_yaxis()
+            .set_major_formatter(
+                FuncFormatter(lambda x, p: format(int(x), ","))
+            )
+        )
+    handles, labels = axs[-1].get_legend_handles_labels()
+    fig.legend(
+        handles,
+        labels,
+        loc="upper center",
+        bbox_to_anchor=[0.5, 0],
+        ncol=3,
+        fancybox=True,
+    )
+    _ = plt.tight_layout()
+    if save:
+        _ = plt.savefig(
+            f"{path_plots}{filename}.png", dpi=300, bbox_inches="tight"
+        )
+
+    _ = plt.show()
+    plt.close()
