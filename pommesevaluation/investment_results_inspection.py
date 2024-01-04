@@ -1526,3 +1526,8 @@ def create_datetime_index(df: pd.DataFrame) -> pd.DataFrame:
     df.drop(columns="new_index", inplace=True)
 
     return df
+
+
+def plot_sensitivities():
+    """Visualize sensitivities using a simple line plot"""
+    pass
