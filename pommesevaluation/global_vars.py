@@ -247,3 +247,18 @@ IMPORT_EXPORT_RENAMED = {
     "German": {"import/export": "Import / Export"},
     "English": {"import/export": "import / export"},
 }
+
+TECHS_RENAMED = {
+    "German": {
+        "CC": "GuD",
+        "GT": "Gasturbine",
+        "M": "Motorenkraftwerk",
+        "ST": "Dampfturbine"
+    },
+    "English": {
+        "CC": "combined cycle",
+        "GT": "gas turbine",
+        "M": "internal combustion engine",
+        "ST": "steam turbine"
+    }
+}
