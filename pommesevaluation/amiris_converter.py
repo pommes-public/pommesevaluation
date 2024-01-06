@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 from matplotlib import pyplot as plt
+from matplotlib.ticker import FuncFormatter
 
 from pommesevaluation.pommesinvest_routines import cut_leap_days
 
@@ -330,10 +331,16 @@ def perform_efficiency_regression(
     grouped_plants: pd.DataFrame,
     plot: bool = False,
     path: str = "./data_out/amiris/",
+    path_plots: str = "./plots_out/efficiency/",
     filename_suffix: str = "",
+    colors: Dict or None = None,
+    language: str = "German",
+    fuels_renamed: Dict or None = None,
+    techs_renamed: Dict or None = None,
 ):
     """Perform a linear regression to determine min and max efficiencies"""
-    # Perform a regression analysis to derive efficiencies and calculate installed capacities meanwhile
+    # Perform a regression analysis to derive efficiencies
+    # and calculate installed capacities meanwhile
     for key, value in grouped_plants.items():
         power_plants_regression = pd.DataFrame(
             index=range(2020, 2051),
@@ -363,7 +370,8 @@ def perform_efficiency_regression(
                 min_efficiency = max(0.1, round(regression_function[0], 4))
                 max_efficiency = round(regression_function[-1], 4)
 
-            # Only one entry in group or only one efficiecy value; thus no regression function
+            # Only one entry in group or only one efficiency value;
+            # thus no regression function
             else:
                 min_efficiency = round(Y[0], 4)
                 max_efficiency = round(Y[0], 4)
@@ -371,7 +379,15 @@ def perform_efficiency_regression(
 
             if plot:
                 plot_regression_function(
-                    grouped_plants, str(key), regression_function, iter_year
+                    grouped_plants,
+                    str(key),
+                    regression_function,
+                    iter_year,
+                    colors,
+                    language,
+                    fuels_renamed,
+                    techs_renamed,
+                    path_plots,
                 )
 
             power_plants_regression.at[
@@ -397,23 +413,69 @@ def plot_regression_function(
     key: str,
     regression_function: float or np.array,
     iter_year: int,
+    colors: Dict or None,
+    language: str,
+    fuels_renamed: Dict or None,
+    techs_renamed: Dict or None,
+    path_plots: str,
 ):
     """Show a combined scatter and line plot of efficiency estimate"""
-    fig, ax = plt.subplots(figsize=(15, 5))
+    fig, ax = plt.subplots(figsize=(15, 6))
 
-    _ = grouped_plants[key].plot(
+    plot_labels = {
+        "German": {
+            "cumulated_capacity": "kumulierte Kapazität in MW",
+            "efficiency_el": "elektrischer Wirkungsgrad in %",
+        },
+        "English": {
+            "cumulated_capacity": "cumulated capacity in MW",
+            "efficiency_el": "electrical efficiency in %",
+        },
+    }
+
+    to_plot = grouped_plants[key].copy()
+    regression_function_plot = regression_function.copy()
+    to_plot["efficiency_el"] = to_plot["efficiency_el"] * 100
+    regression_function_plot = regression_function_plot * 100
+    to_plot.rename(
+        columns={
+            "cumulated_capacity": plot_labels[language]["cumulated_capacity"],
+            "efficiency_el": plot_labels[language]["efficiency_el"],
+        },
+        inplace=True,
+    )
+    if colors:
+        color = colors[key]
+    else:
+        color = "blue"
+    _ = to_plot.plot(
         kind="scatter",
-        x="cumulated_capacity",
-        y="efficiency_el",
+        x=plot_labels[language]["cumulated_capacity"],
+        y=plot_labels[language]["efficiency_el"],
         marker="D",
-        color="blue",
+        color=color,
         ax=ax,
     )
     _ = ax.plot(
-        regression_function,
+        regression_function_plot,
         linestyle="--",
         color="k",
     )
-    ax.set_title(key + "_" + str(iter_year))
+    _ = ax.get_xaxis().set_major_formatter(
+        FuncFormatter(lambda x, p: format(int(x), ","))
+    )
+
+    title = (
+        f"{fuels_renamed[language][key.split('_')[1]]} "
+        f"{techs_renamed[language][key.split('_')[0]]} "
+        f"{iter_year}"
+    )
+
+    ax.set_title(title)
     _ = plt.tight_layout()
-    plt.show()
+
+    make_directory_if_missing(path_plots)
+    file_name = f"{path_plots}{key}_{iter_year}_efficiency_regression.png"
+    _ = plt.savefig(file_name, dpi=300, bbox_inches="tight")
+    _ = plt.show()
+    plt.close()
