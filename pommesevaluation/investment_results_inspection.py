@@ -883,6 +883,7 @@ def plot_single_dispatch_pattern(
     format_axis=True,
     dr_scenario=None,
     hide_legend_and_xlabel=False,
+    x_slices=(5, 16),
 ):
     """Plot a single dispatch pattern for a given start and end time stamp
 
@@ -953,6 +954,9 @@ def plot_single_dispatch_pattern(
 
     hide_legend_and_xlabel : boolean
         Don't show legend and x label if True
+
+    x_slices : tuple of int
+        Start and end value for string slicing of date string
     """
     index_start = int(dispatch_pattern.index.get_loc(start_time_step))
     index_end = int(index_start + amount_of_time_steps)
@@ -963,12 +967,20 @@ def plot_single_dispatch_pattern(
         "German": {
             "x_label": "Zeit",
             "y_label": "Energie in MWh/h",
-            "title": f"{title} von {start_time_step} bis {end_time_step}",
+            "title": (
+                f"{title} von {start_time_step[8:10]}.{start_time_step[5:7]}."
+                f"{start_time_step[:4]} {start_time_step[11:x_slices[1]]} "
+                f"bis {end_time_step[8:10]}.{end_time_step[5:7]}."
+                f"{end_time_step[:4]} {end_time_step[11:x_slices[1]]} "
+            ),
         },
         "English": {
             "x_label": "time",
             "y_label": "energy in MWh/h",
-            "title": f"{title} from {start_time_step} to {end_time_step}",
+            "title": (
+                f"{title} from {start_time_step[: x_slices[1]]} "
+                f"to {end_time_step[: x_slices[1]]}"
+            ),
         },
     }
 
@@ -1007,11 +1019,24 @@ def plot_single_dispatch_pattern(
             _ = plt.legend(bbox_to_anchor=[1.02, 1.05])
 
     _ = ax.set_xticks(range(0, len(to_plot.index), xtick_frequency))
-    _ = ax.set_xticklabels(
-        [label[:16] for label in to_plot.index[::xtick_frequency]],
-        rotation=90,
-        ha="center",
-    )
+    if language == "English":
+        _ = ax.set_xticklabels(
+            [
+                label[x_slices[0] : x_slices[1]]
+                for label in to_plot.index[::xtick_frequency]
+            ],
+            rotation=90,
+            ha="center",
+        )
+    elif language == "German":
+        _ = ax.set_xticklabels(
+            [
+                f"{label[8:10]}.{label[5:7]}. {label[11:x_slices[1]]}"
+                for label in to_plot.index[::xtick_frequency]
+            ],
+            rotation=90,
+            ha="center",
+        )
     _ = plt.margins(0, 0.05)
     if return_plot:
         if save:
@@ -1151,6 +1176,7 @@ def plot_generation_and_comsumption_pattern(
     format_axis=True,
     dr_scenario=None,
     hide_legend_and_xlabel=False,
+    x_slices=(5, 16),
 ):
     """Plot combined generation and consumption pattern as stacked are chart
 
@@ -1222,6 +1248,9 @@ def plot_generation_and_comsumption_pattern(
 
     hide_legend_and_xlabel : boolean
         Don't show legend and x label if True
+
+    x_slices : tuple of int
+        Start and end value for string slicing of date string
     """
     index_start = int(data.index.get_loc(start_time_step))
     index_end = int(index_start + amount_of_time_steps)
@@ -1231,8 +1260,16 @@ def plot_generation_and_comsumption_pattern(
         "German": {
             "x_label": "Zeit",
             "y_label": "Energie in MWh/h",
-            "title_span": f"{title} von {start_time_step} bis {end_time_step}",
-            "title_step": f"{title} für {start_time_step}",
+            "title_span": (
+                f"{title} von {start_time_step[8:10]}.{start_time_step[5:7]}."
+                f"{start_time_step[:4]} {start_time_step[11:x_slices[1]]} "
+                f"bis {end_time_step[8:10]}.{end_time_step[5:7]}."
+                f"{end_time_step[:4]} {end_time_step[11:x_slices[1]]} "
+            ),
+            "title_step": (
+                f"{title} für {start_time_step[8:10]}.{start_time_step[5:7]}."
+                f"{start_time_step[:4]} {start_time_step[11:x_slices[1]]} "
+            ),
         },
         "English": {
             "x_label": "time",
@@ -1265,11 +1302,24 @@ def plot_generation_and_comsumption_pattern(
         [df_neg.sum(axis=1).min() * 1.05, df_pos.sum(axis=1).max() * 1.05]
     )
     _ = ax.set_xticks(range(0, len(data.index), xtick_frequency))
-    _ = ax.set_xticklabels(
-        [label[:16] for label in data.index[::xtick_frequency]],
-        rotation=90,
-        ha="center",
-    )
+    if language == "English":
+        _ = ax.set_xticklabels(
+            [
+                label[x_slices[0] : x_slices[1]]
+                for label in data.index[::xtick_frequency]
+            ],
+            rotation=90,
+            ha="center",
+        )
+    elif language == "German":
+        _ = ax.set_xticklabels(
+            [
+                f"{label[8:10]}.{label[5:7]}. {label[11:x_slices[1]]}"
+                for label in data.index[::xtick_frequency]
+            ],
+            rotation=90,
+            ha="center",
+        )
     if not hide_legend_and_xlabel:
         _ = ax.set_xlabel(plot_labels[language]["x_label"], labelpad=10)
     if not ylabel:
@@ -1333,6 +1383,7 @@ def plot_generation_and_consumption_for_all_cases(
     y_label_pos=(-0.01, 0.55),
     format_axis=True,
     hide_legend_and_xlabel=False,
+    x_slices=(5, 16),
 ):
     """Plot bar plots for exemplary dispatch situation next to each other
 
@@ -1391,6 +1442,9 @@ def plot_generation_and_consumption_for_all_cases(
 
     hide_legend_and_xlabel : boolean
         Don't show legend and x label if True
+
+    x_slices : tuple of int
+        Start and end value for string slicing of date string
     """
     plot_labels = {
         "German": {
@@ -1433,6 +1487,26 @@ def plot_generation_and_consumption_for_all_cases(
             color={"_" + k: v for k, v in colors.items()},
             legend=False,
         )
+        if language == "English":
+            _ = axs[number].set_xticklabels(
+                [
+                    f"DR {key} -\n{label[x_slices[0]: x_slices[1]]}"
+                    for label in data.index
+                ],
+                rotation=90,
+                ha="center",
+            )
+        elif language == "German":
+            _ = axs[number].set_xticklabels(
+                [
+                    f"DR {key} -\n{label[8:10]}.{label[5:7]}. "
+                    f"{label[11:x_slices[1]]}"
+                    for label in data.index
+                ],
+                rotation=90,
+                ha="center",
+            )
+
         _ = axs[number].set_xticklabels(
             [f"DR {key} -\n{label[:16]}" for label in data.index],
             rotation=90,
@@ -1556,9 +1630,7 @@ def plot_sensitivities(
             )
         elif label_used == "title":
             axs[no].set_title(key)
-            axs[no].set_xlabel(
-                plot_labels[language]["x_label"], labelpad=10
-            )
+            axs[no].set_xlabel(plot_labels[language]["x_label"], labelpad=10)
         else:
             raise ValueError("Invalid label used!")
         axs[no].set_ylabel(plot_labels[language]["y_label"], labelpad=10)
