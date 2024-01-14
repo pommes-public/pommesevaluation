@@ -1384,6 +1384,8 @@ def plot_generation_and_consumption_for_all_cases(
     format_axis=True,
     hide_legend_and_xlabel=False,
     x_slices=(5, 16),
+    slice_time=True,
+    sharey=False,
 ):
     """Plot bar plots for exemplary dispatch situation next to each other
 
@@ -1445,6 +1447,12 @@ def plot_generation_and_consumption_for_all_cases(
 
     x_slices : tuple of int
         Start and end value for string slicing of date string
+
+    slice_time : boolean
+        If True, slice date range, starting from given start time
+
+    sharey : boolean
+        Indicating whether to share y label among subplots
     """
     plot_labels = {
         "German": {
@@ -1460,14 +1468,16 @@ def plot_generation_and_consumption_for_all_cases(
         len(data_dict),
         figsize=(subplot_width * len(data_dict), fig_height),
         gridspec_kw={"wspace": wspace},
+        sharey=sharey,
     )
     for number, item in enumerate(data_dict.items()):
         key = item[0]
         data = item[1]
 
-        index_start = int(data.index.get_loc(start_time_steps[key]))
-        index_end = int(index_start + amount_of_time_steps)
-        data = data.iloc[index_start : index_end + 1]
+        if slice_time:
+            index_start = int(data.index.get_loc(start_time_steps[key]))
+            index_end = int(index_start + amount_of_time_steps)
+            data = data.iloc[index_start : index_end + 1]
 
         df_neg, df_pos = data.clip(upper=0), data.clip(lower=0)
         _ = df_pos.plot(
@@ -1487,35 +1497,50 @@ def plot_generation_and_consumption_for_all_cases(
             color={"_" + k: v for k, v in colors.items()},
             legend=False,
         )
-        if language == "English":
-            _ = axs[number].set_xticklabels(
-                [
-                    f"DR {key} -\n{label[x_slices[0]: x_slices[1]]}"
-                    for label in data.index
-                ],
-                rotation=90,
-                ha="center",
-            )
-        elif language == "German":
-            _ = axs[number].set_xticklabels(
-                [
-                    f"DR {key} -\n{label[8:10]}.{label[5:7]}. "
-                    f"{label[11:x_slices[1]]}"
-                    for label in data.index
-                ],
-                rotation=90,
-                ha="center",
-            )
+        if slice_time:
+            if language == "English":
+                _ = axs[number].set_xticklabels(
+                    [
+                        f"DR {key} -\n{label[x_slices[0]: x_slices[1]]}"
+                        for label in data.index
+                    ],
+                    rotation=90,
+                    ha="center",
+                )
+            elif language == "German":
+                _ = axs[number].set_xticklabels(
+                    [
+                        f"DR {key} -\n{label[8:10]}.{label[5:7]}. "
+                        f"{label[11:x_slices[1]]}"
+                        for label in data.index
+                    ],
+                    rotation=90,
+                    ha="center",
+                )
+        else:
+            if number == 0:
+                _ = axs[number].set_xticklabels(
+                    [label for label in data.index],
+                    rotation=90,
+                    ha="center",
+                )
+            else:
+                _ = axs[number].set_xticklabels(
+                    [f"{key[-4:]}-\n{label}" for label in data.index],
+                    rotation=90,
+                    ha="center",
+                )
 
-        _ = axs[number].set_xticklabels(
-            [f"DR {key} -\n{label[:16]}" for label in data.index],
-            rotation=90,
-            ha="center",
-        )
-
-        _ = axs[number].set_ylim(
-            [df_neg.sum(axis=1).min() * 1.05, df_pos.sum(axis=1).max() * 1.05]
-        )
+        if slice_time:
+            _ = axs[number].set_ylim(
+                [
+                    df_neg.sum(axis=1).min() * 1.05,
+                    df_pos.sum(axis=1).max() * 1.05,
+                ]
+            )
+        else:
+            if number == 0:
+                _ = axs[number].set_ylim([0, df_pos.sum(axis=1).max() * 1.05])
         _ = plt.margins(0)
 
         if format_axis:
