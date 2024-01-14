@@ -367,6 +367,8 @@ def plot_single_investment_variable(
             "all": "insgesamt vorhandene Kapazität",
             "potential": "Potenzial vs. investierte Kapazität",
             "generation": "Stromerzeugung in GWh/a",
+            "shift": "verschobene Energie in GWh/a",
+            "shed": "Lastverzicht in GWh/a",
         },
         "English": {
             "invest": "newly invested capacity",
@@ -377,6 +379,8 @@ def plot_single_investment_variable(
             "all": "overall installed capacity",
             "potential": "potential vs. realised capacity",
             "generation": "power generation in GWh/a",
+            "shift": "shifted energy in GWh/a",
+            "shed": "shedded energy in GWh/a",
         },
     }
     if group:
