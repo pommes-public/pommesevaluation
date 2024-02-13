@@ -1079,6 +1079,7 @@ def add_area_to_existing_plot(
     place_legend_below=True,
     ncol=4,
     bbox_params=(0.5, -0.45),
+    set_xticks=True,
 ):
     """Add a stacked area to plot
 
@@ -1116,6 +1117,9 @@ def add_area_to_existing_plot(
 
     bbox_params : tuple or list
         Define bbox_to_anchor content (for legend placed below)
+
+    set_xticks : boolean
+        If True, format xticks
     """
     index_start = int(data.index.get_loc(start_time_step))
     index_end = int(index_start + amount_of_time_steps)
@@ -1131,10 +1135,11 @@ def add_area_to_existing_plot(
         ax=ax,
         legend=False,
     )
-    _ = ax.set_xticks(range(0, len(to_plot.index), 12))
-    _ = ax.set_xticklabels(
-        [label[:16] for label in to_plot.index[::12]], rotation=90, ha="center"
-    )
+    if set_xticks:
+        _ = ax.set_xticks(range(0, len(to_plot.index), 12))
+        _ = ax.set_xticklabels(
+            [label[:16] for label in to_plot.index[::12]], rotation=90, ha="center"
+        )
     if place_legend_below:
         _ = plt.legend(
             loc="upper center",
