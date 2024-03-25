@@ -359,15 +359,15 @@ def plot_single_investment_variable(
     """
     ylabels = {
         "German": {
-            "invest": "neu installierte Kapazität",
-            "old": "insgesamt stillgelegte Kapazität",
-            "old_end": "wegen Lebensdauer stillgelegte Kapazität",
-            "old_exo": "unter Berücksichtigung des Anlagenalters stillgelegte Kapazität",  # noqa: E501
-            "total": "insgesamt installierte Kapazität",
-            "all": "insgesamt vorhandene Kapazität",
+            "invest": "Neu installierte Kapazität",
+            "old": "Insgesamt stillgelegte Kapazität",
+            "old_end": "Wegen Lebensdauer stillgelegte Kapazität",
+            "old_exo": "Unter Berücksichtigung des Anlagenalters stillgelegte Kapazität",  # noqa: E501
+            "total": "Insgesamt installierte Kapazität",
+            "all": "Insgesamt vorhandene Kapazität",
             "potential": "Potenzial vs. investierte Kapazität",
             "generation": "Stromerzeugung in GWh/a",
-            "shift": "verschobene Energie in GWh/a",
+            "shift": "Verschobene Energie in GWh/a",
             "shed": "Lastverzicht in GWh/a",
         },
         "English": {
@@ -641,9 +641,16 @@ def create_single_plot(
     if ylim:
         _ = ax.set_ylim(ylim)
     if format_axis:
-        _ = ax.get_yaxis().set_major_formatter(
-            FuncFormatter(lambda x, p: format(int(x), ","))
-        )
+        if language == "English":
+            _ = ax.get_yaxis().set_major_formatter(
+                FuncFormatter(lambda x, p: format(int(x), ","))
+            )
+        elif language == "German":
+            _ = ax.get_yaxis().set_major_formatter(
+                FuncFormatter(
+                    lambda x, p: format(int(x), ",").replace(",", ".")
+                )
+            )
 
 
 def plot_single_investment_variable_for_all_cases(
@@ -755,12 +762,12 @@ def plot_single_investment_variable_for_all_cases(
     x_label = {"German": "Jahr", "English": "year"}
     ylabels = {
         "German": {
-            "invest": "neu installierte Kapazität",
-            "old": "insgesamt stillgelegte Kapazität",
-            "old_end": "wegen Lebensdauer stillgelegte Kapazität",
-            "old_exo": "unter Berücksichtigung des Anlagenalters stillgelegte Kapazität",
-            "total": "insgesamt installierte Kapazität",
-            "all": "insgesamt vorhandene Kapazität",
+            "invest": "Neu installierte Kapazität",
+            "old": "Insgesamt stillgelegte Kapazität",
+            "old_end": "Wegen Lebensdauer stillgelegte Kapazität",
+            "old_exo": "Unter Berücksichtigung des Anlagenalters stillgelegte Kapazität",
+            "total": "Insgesamt installierte Kapazität",
+            "all": "Insgesamt vorhandene Kapazität",
             "potential": "Potenzial vs. investierte Kapazität",
         },
         "English": {
@@ -1048,9 +1055,16 @@ def plot_single_dispatch_pattern(
         return fig, ax
 
     if format_axis:
-        _ = ax.get_yaxis().set_major_formatter(
-            FuncFormatter(lambda x, p: format(int(x), ","))
-        )
+        if language == "English":
+            _ = ax.get_yaxis().set_major_formatter(
+                FuncFormatter(lambda x, p: format(int(x), ","))
+            )
+        elif language == "German":
+            _ = ax.get_yaxis().set_major_formatter(
+                FuncFormatter(
+                    lambda x, p: format(int(x), ",").replace(",", ".")
+                )
+            )
 
     _ = plt.tight_layout()
 
@@ -1138,7 +1152,9 @@ def add_area_to_existing_plot(
     if set_xticks:
         _ = ax.set_xticks(range(0, len(to_plot.index), 12))
         _ = ax.set_xticklabels(
-            [label[:16] for label in to_plot.index[::12]], rotation=90, ha="center"
+            [label[:16] for label in to_plot.index[::12]],
+            rotation=90,
+            ha="center",
         )
     if place_legend_below:
         _ = plt.legend(
@@ -1355,9 +1371,16 @@ def plot_generation_and_comsumption_pattern(
             _ = plt.legend(bbox_to_anchor=bbox_params)
 
     if format_axis:
-        _ = ax.get_yaxis().set_major_formatter(
-            FuncFormatter(lambda x, p: format(int(x), ","))
-        )
+        if language == "English":
+            _ = ax.get_yaxis().set_major_formatter(
+                FuncFormatter(lambda x, p: format(int(x), ","))
+            )
+        elif language == "German":
+            _ = ax.get_yaxis().set_major_formatter(
+                FuncFormatter(
+                    lambda x, p: format(int(x), ",").replace(",", ".")
+                )
+            )
 
     _ = plt.tight_layout()
 
@@ -1553,13 +1576,24 @@ def plot_generation_and_consumption_for_all_cases(
         _ = plt.margins(0)
 
         if format_axis:
-            _ = (
-                axs[number]
-                .get_yaxis()
-                .set_major_formatter(
-                    FuncFormatter(lambda x, p: format(int(x), ","))
+            if language == "English":
+                _ = (
+                    axs[number]
+                    .get_yaxis()
+                    .set_major_formatter(
+                        FuncFormatter(lambda x, p: format(int(x), ","))
+                    )
                 )
-            )
+            elif language == "German":
+                _ = (
+                    axs[number]
+                    .get_yaxis()
+                    .set_major_formatter(
+                        FuncFormatter(
+                            lambda x, p: format(int(x), ",").replace(",", ".")
+                        )
+                    )
+                )
 
     if not hide_legend_and_xlabel:
         if place_legend_below:
@@ -1668,13 +1702,24 @@ def plot_sensitivities(
         else:
             raise ValueError("Invalid label used!")
         axs[no].set_ylabel(plot_labels[language]["y_label"], labelpad=10)
-        _ = (
-            axs[no]
-            .get_yaxis()
-            .set_major_formatter(
-                FuncFormatter(lambda x, p: format(int(x), ","))
+        if language == "English":
+            _ = (
+                axs[no]
+                .get_yaxis()
+                .set_major_formatter(
+                    FuncFormatter(lambda x, p: format(int(x), ","))
+                )
             )
-        )
+        elif language == "German":
+            _ = (
+                axs[no]
+                .get_yaxis()
+                .set_major_formatter(
+                    FuncFormatter(
+                        lambda x, p: format(int(x), ",").replace(",", ".")
+                    )
+                )
+            )
     handles, labels = axs[-1].get_legend_handles_labels()
     fig.legend(
         handles,
