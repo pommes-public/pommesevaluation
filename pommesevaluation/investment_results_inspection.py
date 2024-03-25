@@ -1055,9 +1055,16 @@ def plot_single_dispatch_pattern(
         return fig, ax
 
     if format_axis:
-        _ = ax.get_yaxis().set_major_formatter(
-            FuncFormatter(lambda x, p: format(int(x), ","))
-        )
+        if language == "English":
+            _ = ax.get_yaxis().set_major_formatter(
+                FuncFormatter(lambda x, p: format(int(x), ","))
+            )
+        elif language == "German":
+            _ = ax.get_yaxis().set_major_formatter(
+                FuncFormatter(
+                    lambda x, p: format(int(x), ",").replace(",", ".")
+                )
+            )
 
     _ = plt.tight_layout()
 
@@ -1145,7 +1152,9 @@ def add_area_to_existing_plot(
     if set_xticks:
         _ = ax.set_xticks(range(0, len(to_plot.index), 12))
         _ = ax.set_xticklabels(
-            [label[:16] for label in to_plot.index[::12]], rotation=90, ha="center"
+            [label[:16] for label in to_plot.index[::12]],
+            rotation=90,
+            ha="center",
         )
     if place_legend_below:
         _ = plt.legend(
@@ -1362,9 +1371,16 @@ def plot_generation_and_comsumption_pattern(
             _ = plt.legend(bbox_to_anchor=bbox_params)
 
     if format_axis:
-        _ = ax.get_yaxis().set_major_formatter(
-            FuncFormatter(lambda x, p: format(int(x), ","))
-        )
+        if language == "English":
+            _ = ax.get_yaxis().set_major_formatter(
+                FuncFormatter(lambda x, p: format(int(x), ","))
+            )
+        elif language == "German":
+            _ = ax.get_yaxis().set_major_formatter(
+                FuncFormatter(
+                    lambda x, p: format(int(x), ",").replace(",", ".")
+                )
+            )
 
     _ = plt.tight_layout()
 
@@ -1560,13 +1576,24 @@ def plot_generation_and_consumption_for_all_cases(
         _ = plt.margins(0)
 
         if format_axis:
-            _ = (
-                axs[number]
-                .get_yaxis()
-                .set_major_formatter(
-                    FuncFormatter(lambda x, p: format(int(x), ","))
+            if language == "English":
+                _ = (
+                    axs[number]
+                    .get_yaxis()
+                    .set_major_formatter(
+                        FuncFormatter(lambda x, p: format(int(x), ","))
+                    )
                 )
-            )
+            elif language == "German":
+                _ = (
+                    axs[number]
+                    .get_yaxis()
+                    .set_major_formatter(
+                        FuncFormatter(
+                            lambda x, p: format(int(x), ",").replace(",", ".")
+                        )
+                    )
+                )
 
     if not hide_legend_and_xlabel:
         if place_legend_below:
