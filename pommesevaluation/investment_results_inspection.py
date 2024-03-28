@@ -1094,6 +1094,8 @@ def add_area_to_existing_plot(
     ncol=4,
     bbox_params=(0.5, -0.45),
     set_xticks=True,
+    format_axis=False,
+    language="German",
 ):
     """Add a stacked area to plot
 
@@ -1134,6 +1136,12 @@ def add_area_to_existing_plot(
 
     set_xticks : boolean
         If True, format xticks
+
+    format_axis : boolean
+        If True, format thousands in y axis
+
+    language : str
+        Language for plot labels (one of "German" and "English")
     """
     index_start = int(data.index.get_loc(start_time_step))
     index_end = int(index_start + amount_of_time_steps)
@@ -1166,6 +1174,19 @@ def add_area_to_existing_plot(
         )
     else:
         _ = plt.legend(bbox_to_anchor=[1.02, 1.05])
+
+    if format_axis:
+        if language == "English":
+            _ = ax.get_yaxis().set_major_formatter(
+                FuncFormatter(lambda x, p: format(int(x), ","))
+            )
+        elif language == "German":
+            _ = ax.get_yaxis().set_major_formatter(
+                FuncFormatter(
+                    lambda x, p: format(int(x), ",").replace(",", ".")
+                )
+            )
+
     _ = plt.tight_layout()
 
     if save:
