@@ -288,6 +288,7 @@ def plot_single_investment_variable(
     ncol=4,
     language="German",
     exclude_unit=False,
+    sensitivity_string=None,
 ):
     """Plot a single investment-related variable from results data set
 
@@ -356,6 +357,9 @@ def plot_single_investment_variable(
 
     exclude_unit : boolean
         If True, exclude the default unit (MW)
+
+    sensitivity_string : str or None
+        sensitivity value to append to plot names
     """
     ylabels = {
         "German": {
@@ -409,6 +413,8 @@ def plot_single_investment_variable(
     _ = plt.tight_layout()
 
     if save:
+        if sensitivity_string:
+            filename = f"{filename}{sensitivity_string}"
         _ = plt.savefig(
             f"{path_plots}{filename}_{dr_scenario}.png",
             dpi=300,
@@ -895,6 +901,7 @@ def plot_single_dispatch_pattern(
     dr_scenario=None,
     hide_legend_and_xlabel=False,
     x_slices=(5, 16),
+    sensitivity_string=None,
 ):
     """Plot a single dispatch pattern for a given start and end time stamp
 
@@ -968,6 +975,9 @@ def plot_single_dispatch_pattern(
 
     x_slices : tuple of int
         Start and end value for string slicing of date string
+
+    sensitivity_string : str or None
+        sensitivity value to append to plot names
     """
     index_start = int(dispatch_pattern.index.get_loc(start_time_step))
     index_end = int(index_start + amount_of_time_steps)
@@ -1069,6 +1079,8 @@ def plot_single_dispatch_pattern(
     _ = plt.tight_layout()
 
     if save:
+        if sensitivity_string:
+            filename = f"{filename}{sensitivity_string}"
         file_name_out = (
             f"{path_plots}{filename}_{dr_scenario}_"
             f"{start_time_step}-{end_time_step}.png"
@@ -1223,6 +1235,7 @@ def plot_generation_and_comsumption_pattern(
     dr_scenario=None,
     hide_legend_and_xlabel=False,
     x_slices=(5, 16),
+    sensitivity_string=None,
 ):
     """Plot combined generation and consumption pattern as stacked are chart
 
@@ -1297,6 +1310,9 @@ def plot_generation_and_comsumption_pattern(
 
     x_slices : tuple of int
         Start and end value for string slicing of date string
+
+    sensitivity_string : str or None
+        sensitivity value to append to plot names
     """
     index_start = int(data.index.get_loc(start_time_step))
     index_end = int(index_start + amount_of_time_steps)
@@ -1406,6 +1422,8 @@ def plot_generation_and_comsumption_pattern(
     _ = plt.tight_layout()
 
     if save:
+        if sensitivity_string:
+            filename = f"{filename}{sensitivity_string}"
         file_name_out = (
             f"{path_plots}{filename}_{dr_scenario}_"
             f"{start_time_step}-{end_time_step}.png"
