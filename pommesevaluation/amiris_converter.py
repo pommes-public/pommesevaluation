@@ -461,9 +461,19 @@ def plot_regression_function(
         linestyle="--",
         color="k",
     )
-    _ = ax.get_xaxis().set_major_formatter(
-        FuncFormatter(lambda x, p: format(int(x), ","))
-    )
+    if language == "English":
+        _ = ax.get_xaxis().set_major_formatter(
+            FuncFormatter(lambda x, p: format(int(x), ","))
+        )
+    elif language == "German":
+        _ = ax.get_xaxis().set_major_formatter(
+            FuncFormatter(lambda x, p: format(int(x), ",").replace(",", "."))
+        )
+        _ = ax.get_yaxis().set_major_formatter(
+            FuncFormatter(lambda x, p: "{:.1f}".format(x).replace(".", ","))
+        )
+    else:
+        raise ValueError(f"Language not implemented: {language}.")
 
     title = (
         f"{fuels_renamed[language][key.split('_')[1]]} "
