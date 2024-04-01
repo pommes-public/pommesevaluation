@@ -1418,6 +1418,7 @@ def plot_generation_and_consumption_for_all_cases(
     x_slices=(5, 16),
     slice_time=True,
     sharey=False,
+    scale=False,
 ):
     """Plot bar plots for exemplary dispatch situation next to each other
 
@@ -1485,6 +1486,9 @@ def plot_generation_and_consumption_for_all_cases(
 
     sharey : boolean
         Indicating whether to share y label among subplots
+
+    scale : boolean
+        If True, correct for mismatch by scaling (dirty fix)
     """
     plot_labels = {
         "German": {
@@ -1510,6 +1514,15 @@ def plot_generation_and_consumption_for_all_cases(
             index_start = int(data.index.get_loc(start_time_steps[key]))
             index_end = int(index_start + amount_of_time_steps)
             data = data.iloc[index_start : index_end + 1]
+
+        if scale:
+            # Scale as a dirty fix
+            total_generation = data.clip(lower=0).sum().sum()
+            total_load = -data.clip(upper=0).sum().sum()
+            dem_cols = [
+                col for col in data.columns if (data[col] < 1e-3).all()
+            ]
+            data[dem_cols] = data[dem_cols] * total_generation / total_load
 
         df_neg, df_pos = data.clip(upper=0), data.clip(lower=0)
         _ = df_pos.plot(
