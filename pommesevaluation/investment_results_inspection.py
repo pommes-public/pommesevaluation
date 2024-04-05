@@ -1724,7 +1724,7 @@ def plot_sensitivities(
     colors: Dict,
     renamed_sensitivities: Dict or None = None,
     language: str = "German",
-    figsize: tuple = (18, 5),
+    figsize: tuple = (16, 5),
     save: bool = True,
     path_plots="./plots/",
     filename="sensitivities",
