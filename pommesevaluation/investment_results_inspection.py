@@ -1615,16 +1615,21 @@ def plot_generation_and_consumption_for_all_cases(
                     ha="center",
                 )
 
+        axis_factor = 1.05
+        if sharey:
+            axis_factor = 1.2
         if slice_time:
             _ = axs[number].set_ylim(
                 [
-                    df_neg.sum(axis=1).min() * 1.05,
-                    df_pos.sum(axis=1).max() * 1.05,
+                    df_neg.sum(axis=1).min() * axis_factor,
+                    df_pos.sum(axis=1).max() * axis_factor,
                 ]
             )
         else:
             if number == 0:
-                _ = axs[number].set_ylim([0, df_pos.sum(axis=1).max() * 1.05])
+                _ = axs[number].set_ylim(
+                    [0, df_pos.sum(axis=1).max() * axis_factor]
+                )
         _ = plt.margins(0)
 
         if format_axis:
