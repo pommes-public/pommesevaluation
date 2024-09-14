@@ -157,6 +157,7 @@ def draw_price_plot(
     path_plots="./plots/",
     file_name="power_prices",
     figsize=(20, 10),
+    language="English",
 ):
     """Plot power price results of model against historical prices
 
@@ -183,18 +184,29 @@ def draw_price_plot(
     save : boolean
         If True, save the plot to disk
 
+    path_plots : str
+        Path to store plot at
+
     file_name : str
         File name for saving the plot
 
     figsize : tuple
         Control the size of the figure created
+
+    language: str
+        Language to use, one of "German" and "English"
     """
+    axes_labels = {
+        "German": {"x": "Zeit", "y": "Strompreis in €/MWh"},
+        "English": {"x": "time", "y": "power price in €/MWh"}
+    }
+
     fig, ax = plt.subplots(figsize=figsize)
     ax = power_prices.plot(color=color, ax=ax)
-    _ = plt.ylabel("power price in €/MWh")
+    _ = plt.ylabel(axes_labels[language]["y"])
     _ = plt.title(title)
     _ = ax.legend(loc="upper right")
-    _ = plt.xlabel("time")
+    _ = plt.xlabel(axes_labels[language]["x"])
     _ = plt.xticks(rotation=45)
 
     if y_min_max:
