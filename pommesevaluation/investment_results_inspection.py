@@ -1213,6 +1213,247 @@ def add_area_to_existing_plot(
     plt.close()
 
 
+def plot_generation_and_residual_load_plot(
+    generation,
+    load,
+    residual_load,
+    start_time_step,
+    amount_of_time_steps,
+    colors,
+    linewidth: float = 5,
+    linestyle: str = "solid",
+    figsize=(15, 10),
+    save=True,
+    path_plots="./plots/",
+    filename="line_plot",
+    place_legend_below=True,
+    ncol=4,
+    bbox_params=(0.5, -0.45),
+    format_axis=False,
+    language="German",
+    xtick_frequency=12,
+    x_slices=(5, 16),
+):
+    """Adds lines to an existing plot
+
+    Parameters
+    ----------
+    generation : pd.DataFrame
+        Generation to be plotted (stacked area)
+
+    load : pd.DataFrame
+        Load to be plotted (line)
+
+    residual_load : pd.DataFrame
+        Residual load to be plotted (bottom subplot; stacked area)
+
+    start_time_step : str
+        First time step of excerpt displayed
+
+    amount_of_time_steps : int or float
+        Number of time steps to be displayed
+
+    colors : dict
+        Colors to use for the plot
+        ax : matplotlib.axes.Axes
+        matplotlib axes object
+
+    save : bool
+        Indicates whether to save the plot
+
+    linewidth : dict
+        Linewidth per element to plot
+
+    linestyle : dict
+        Linestyle per element to plot
+
+    figsize : tuple of int
+        Size of plot
+
+    path_plots : str
+        Path to use for storing the plot
+
+    filename : str
+        File name to use for the plot
+
+    place_legend_below : boolean
+        If True, plot legend under plot, else right next to it
+
+    ncol : int
+        Control the number of columns for the legend labels
+
+    bbox_params : tuple or list
+        Define bbox_to_anchor content (for legend placed below)
+
+    set_xticks : boolean
+        If True, format xticks
+
+    format_axis : boolean
+        If True, format thousands in y axis
+
+    language : str
+        Language for plot labels (one of "German" and "English")
+
+    xtick_frequency : int
+        Determine frequency of x ticks (12: plot every 12th x tick)
+
+    format_axis : boolean
+        If True, format thousands in y axis
+
+    x_slices : tuple of int
+        Start and end value for string slicing of date string
+    """
+    index_start = int(generation.index.get_loc(start_time_step))
+    index_end = int(index_start + amount_of_time_steps)
+    end_time_step = generation.iloc[index_end].name
+
+    plot_labels = {
+        "German": {
+            "x_label": "Zeit",
+            "y_label": "Leistung in GW",
+        },
+        "English": {
+            "x_label": "time",
+            "y_label": "power in GW",
+        },
+    }
+    residual_load_names = {
+        "German": {
+            "pos": "positive Residuallast",
+            "neg": "negative Residuallast",
+        },
+        "English": {
+            "pos": "positive residual load",
+            "neg": "negative residual load",
+        },
+    }
+
+    generation_to_plot = generation.iloc[index_start : index_end + 1].div(1000)
+    load_to_plot = load.iloc[index_start : index_end + 1].div(1000)
+    residual_load_to_plot = residual_load.iloc[
+        index_start : index_end + 1
+    ].div(1000)
+
+    fig, axs = plt.subplots(
+        2,
+        1,
+        figsize=figsize,
+        sharex=True,
+        gridspec_kw={"height_ratios": [1.4, 1]},
+    )
+    for ax in axs:
+        ax.autoscale(False)
+
+    _ = generation_to_plot.plot(
+        ax=axs[0], kind="area", color=colors, stacked=True, legend=False
+    )
+    _ = load_to_plot.plot(
+        kind="line",
+        linewidth=linewidth,
+        linestyle=linestyle,
+        color=colors,
+        ax=axs[0],
+    )
+
+    df_neg, df_pos = residual_load_to_plot.clip(
+        upper=0
+    ), residual_load_to_plot.clip(lower=0)
+    df_neg.name = residual_load_names[language]["neg"]
+    df_pos.name = residual_load_names[language]["pos"]
+    _ = df_pos.plot(
+        kind="area",
+        ax=axs[1],
+        stacked=False,
+        linewidth=0.0,
+        color="blue",
+        legend=False,
+    )
+    _ = axs[1].set_prop_cycle(None)
+    _ = df_neg.plot(
+        kind="area",
+        ax=axs[1],
+        stacked=False,
+        linewidth=0.0,
+        color="red",
+        legend=False,
+    )
+    axs[0].set_ylim(0, 250)
+    axs[1].set_ylim(-150, 100)
+    _ = plt.subplots_adjust(left=0, right=1, top=1, wspace=0)
+
+    if place_legend_below:
+        _ = axs[0].legend(
+            loc="upper center",
+            bbox_to_anchor=bbox_params,
+            fancybox=True,
+            shadow=False,
+            ncol=ncol,
+        )
+        _ = axs[1].legend(
+            loc="upper center",
+            bbox_to_anchor=bbox_params,
+            fancybox=True,
+            shadow=False,
+            ncol=ncol,
+        )
+    else:
+        _ = axs[0].legend(bbox_to_anchor=[1.02, 1.02])
+        _ = axs[1].legend(bbox_to_anchor=[1.17, 1.02])
+
+    if format_axis:
+        if language == "English":
+            for ax in axs:
+                _ = ax.get_yaxis().set_major_formatter(
+                    FuncFormatter(lambda x, p: format(int(x), ","))
+                )
+        elif language == "German":
+            for ax in axs:
+                _ = ax.get_yaxis().set_major_formatter(
+                    FuncFormatter(
+                        lambda x, p: format(int(x), ",").replace(",", ".")
+                    )
+                )
+    for ax in axs:
+        _ = ax.set_xticks(
+            range(0, len(generation_to_plot.index), xtick_frequency)
+        )
+    if language == "English":
+        _ = axs[1].set_xticklabels(
+            [
+                label[x_slices[0] : x_slices[1]]
+                for label in generation_to_plot.index[::xtick_frequency]
+            ],
+            rotation=90,
+            ha="center",
+        )
+    elif language == "German":
+        _ = axs[1].set_xticklabels(
+            [
+                f"{label[8:10]}.{label[5:7]}. {label[11:x_slices[1]]}"
+                for label in generation_to_plot.index[::xtick_frequency]
+            ],
+            rotation=90,
+            ha="center",
+        )
+    ylabel = plot_labels[language]["y_label"]
+    for ax in axs:
+        _ = ax.set_ylabel(ylabel, labelpad=10)
+    _ = axs[1].set_xlabel(plot_labels[language]["x_label"], labelpad=10)
+
+    _ = plt.tight_layout(pad=0)
+
+    if save:
+        file_name_out = (
+            f"{path_plots}{filename}_{start_time_step}-{end_time_step}.png"
+        )
+        file_name_out = file_name_out.replace(":", "-").replace(" ", "_")
+        file_name_out.replace(":", "-")
+        _ = plt.savefig(file_name_out, dpi=300, bbox_inches="tight")
+
+    _ = plt.show()
+    plt.close()
+
+
 def plot_generation_and_comsumption_pattern(
     data,
     start_time_step,
