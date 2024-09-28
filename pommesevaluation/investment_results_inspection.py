@@ -523,6 +523,7 @@ def create_single_plot(
     ncol=4,
     language="German",
     exclude_unit=False,
+    edgecolor=None,
 ):
     """Create one single investment results plot"""
     x_label = {"German": "Jahr", "English": "year"}
@@ -533,18 +534,33 @@ def create_single_plot(
             ]
             if legend:
                 _ = plot_data.T.plot(
-                    kind="bar", stacked=True, ax=ax, color=colors
+                    kind="bar",
+                    stacked=True,
+                    ax=ax,
+                    color=colors,
+                    edgecolor=edgecolor,
                 )
             else:
                 _ = plot_data.T.plot(
-                    kind="bar", stacked=True, ax=ax, color=colors, legend=False
+                    kind="bar",
+                    stacked=True,
+                    ax=ax,
+                    color=colors,
+                    legend=False,
+                    edgecolor=edgecolor,
                 )
         else:
             if legend:
-                _ = plot_data.T.plot(kind="bar", stacked=True, ax=ax)
+                _ = plot_data.T.plot(
+                    kind="bar", stacked=True, ax=ax, edgecolor=edgecolor
+                )
             else:
                 _ = plot_data.T.plot(
-                    kind="bar", stacked=True, ax=ax, legend=False
+                    kind="bar",
+                    stacked=True,
+                    ax=ax,
+                    legend=False,
+                    edgecolor=edgecolor,
                 )
         handles, labels = ax.get_legend_handles_labels()
 
@@ -684,6 +700,8 @@ def plot_single_investment_variable_for_all_cases(
     include_common_legend=True,
     fig_position=0.13,
     exclude_unit=False,
+    grid=False,
+    edges=False,
 ):
     """Plot investment variable; create subplots to compare among scenarios
 
@@ -764,6 +782,12 @@ def plot_single_investment_variable_for_all_cases(
 
     exclude_unit : boolean
         If True, exclude the default unit (MW)
+
+    grid : boolean
+        If True, add a y-axis grid in the background
+
+    edges : boolean
+        If True, add edges to plot
     """
     x_label = {"German": "Jahr", "English": "year"}
     ylabels = {
@@ -793,6 +817,11 @@ def plot_single_investment_variable_for_all_cases(
         figsize=(fig_width, subplot_height * len(results_dict)),
     )
     hide_axis = True
+
+    if edges:
+        edgecolor = "#5f5f5f"
+    else:
+        edgecolor = None
     for number, item in enumerate(results_dict.items()):
         if number == len(results_dict) - 1:
             hide_axis = False
@@ -829,7 +858,11 @@ def plot_single_investment_variable_for_all_cases(
             ncol=ncol,
             language=language,
             exclude_unit=exclude_unit,
+            edgecolor=edgecolor,
         )
+        if grid:
+            _ = axs[number].set_axisbelow(True)
+            _ = axs[number].grid(axis="y", color="lightgrey")
 
     # Use common axes across plot
     if storage:
