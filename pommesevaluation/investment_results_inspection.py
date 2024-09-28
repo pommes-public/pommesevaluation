@@ -1213,7 +1213,7 @@ def add_area_to_existing_plot(
     plt.close()
 
 
-def plot_generation_and_residual_load_plot(
+def plot_generation_and_residual_load(
     generation,
     load,
     residual_load,
@@ -1233,6 +1233,7 @@ def plot_generation_and_residual_load_plot(
     language="German",
     xtick_frequency=12,
     x_slices=(5, 16),
+    x_tick_rotation=None,
 ):
     """Adds lines to an existing plot
 
@@ -1302,6 +1303,9 @@ def plot_generation_and_residual_load_plot(
 
     x_slices : tuple of int
         Start and end value for string slicing of date string
+
+    x_tick_rotation : None or int
+        Rotation for x ticks
     """
     index_start = int(generation.index.get_loc(start_time_step))
     index_end = int(index_start + amount_of_time_steps)
@@ -1397,8 +1401,8 @@ def plot_generation_and_residual_load_plot(
             ncol=ncol,
         )
     else:
-        _ = axs[0].legend(bbox_to_anchor=[1.02, 1.02])
-        _ = axs[1].legend(bbox_to_anchor=[1.17, 1.02])
+        _ = axs[0].legend(bbox_to_anchor=[1.18, 1.02])
+        _ = axs[1].legend(bbox_to_anchor=[1.19, 1.02])
 
     if format_axis:
         if language == "English":
@@ -1413,6 +1417,12 @@ def plot_generation_and_residual_load_plot(
                         lambda x, p: format(int(x), ",").replace(",", ".")
                     )
                 )
+    horizontal_aligment = "center"
+    if x_tick_rotation:
+        if x_tick_rotation < 90:
+            horizontal_aligment = "right"
+    else:
+        x_tick_rotation = 90
     for ax in axs:
         _ = ax.set_xticks(
             range(0, len(generation_to_plot.index), xtick_frequency)
@@ -1423,8 +1433,8 @@ def plot_generation_and_residual_load_plot(
                 label[x_slices[0] : x_slices[1]]
                 for label in generation_to_plot.index[::xtick_frequency]
             ],
-            rotation=90,
-            ha="center",
+            rotation=x_tick_rotation,
+            ha=horizontal_aligment,
         )
     elif language == "German":
         _ = axs[1].set_xticklabels(
@@ -1432,11 +1442,12 @@ def plot_generation_and_residual_load_plot(
                 f"{label[8:10]}.{label[5:7]}. {label[11:x_slices[1]]}"
                 for label in generation_to_plot.index[::xtick_frequency]
             ],
-            rotation=90,
-            ha="center",
+            rotation=x_tick_rotation,
+            ha=horizontal_aligment,
         )
     ylabel = plot_labels[language]["y_label"]
     for ax in axs:
+        ax.minorticks_off()
         _ = ax.set_ylabel(ylabel, labelpad=10)
     _ = axs[1].set_xlabel(plot_labels[language]["x_label"], labelpad=10)
 
