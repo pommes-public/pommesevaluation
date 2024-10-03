@@ -1743,6 +1743,7 @@ def plot_generation_and_consumption_for_all_cases(
     slice_time=True,
     sharey=False,
     scale=False,
+    edges=False,
 ):
     """Plot bar plots for exemplary dispatch situation next to each other
 
@@ -1830,6 +1831,12 @@ def plot_generation_and_consumption_for_all_cases(
         gridspec_kw={"wspace": wspace},
         sharey=sharey,
     )
+    if edges:
+        edgecolor = "#5f5f5f"
+        linewidth = 1.0
+    else:
+        edgecolor = None
+        linewidth = 0.0
     for number, item in enumerate(data_dict.items()):
         key = item[0]
         data = item[1]
@@ -1853,18 +1860,20 @@ def plot_generation_and_consumption_for_all_cases(
             kind="bar",
             ax=axs[number],
             stacked=True,
-            linewidth=0.0,
+            linewidth=linewidth,
             color=colors,
             legend=False,
+            edgecolor=edgecolor,
         )
         _ = axs[number].set_prop_cycle(None)
         _ = df_neg.rename(columns=lambda x: "_" + x).plot(
             kind="bar",
             ax=axs[number],
             stacked=True,
-            linewidth=0.0,
+            linewidth=linewidth,
             color={"_" + k: v for k, v in colors.items()},
             legend=False,
+            edgecolor=edgecolor,
         )
         if slice_time:
             if language == "English":
