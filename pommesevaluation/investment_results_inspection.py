@@ -289,6 +289,8 @@ def plot_single_investment_variable(
     language="German",
     exclude_unit=False,
     sensitivity_string=None,
+    grid=False,
+    edges=False,
 ):
     """Plot a single investment-related variable from results data set
 
@@ -360,6 +362,12 @@ def plot_single_investment_variable(
 
     sensitivity_string : str or None
         sensitivity value to append to plot names
+
+    grid : boolean
+        If True, add a y-axis grid in the background
+
+    edges : boolean
+        If True, add edges to plot
     """
     ylabels = {
         "German": {
@@ -392,6 +400,11 @@ def plot_single_investment_variable(
     else:
         plot_data = results.copy()
 
+    if edges:
+        edgecolor = "#5f5f5f"
+    else:
+        edgecolor = None
+
     fig, ax = plt.subplots(figsize=figsize)
     create_single_plot(
         plot_data,
@@ -408,7 +421,11 @@ def plot_single_investment_variable(
         ncol=ncol,
         language=language,
         exclude_unit=exclude_unit,
+        edgecolor=edgecolor,
     )
+    if grid:
+        _ = ax.set_axisbelow(True)
+        _ = ax.grid(axis="y", color="lightgrey")
 
     _ = plt.tight_layout()
 
