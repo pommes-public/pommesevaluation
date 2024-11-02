@@ -1760,6 +1760,7 @@ def plot_generation_and_consumption_for_all_cases(
     slice_time=True,
     sharey=False,
     scale=False,
+    grid=False,
     edges=False,
 ):
     """Plot bar plots for exemplary dispatch situation next to each other
@@ -1831,6 +1832,12 @@ def plot_generation_and_consumption_for_all_cases(
 
     scale : boolean
         If True, correct for mismatch by scaling (dirty fix)
+
+    grid : boolean
+        If True, add a y-axis grid in the background
+
+    edges : boolean
+        If True, add edges to plot
     """
     plot_labels = {
         "German": {
@@ -1942,6 +1949,9 @@ def plot_generation_and_consumption_for_all_cases(
                     [0, df_pos.sum(axis=1).max() * axis_factor]
                 )
         _ = plt.margins(0)
+        if grid:
+            _ = axs[number].set_axisbelow(True)
+            _ = axs[number].grid(axis="y", color="lightgrey")
 
         if format_axis:
             if language == "English":
